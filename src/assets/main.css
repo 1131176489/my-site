@@ -1,0 +1,37 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* overflow: hidden; */
+}
+
+/* @media screen and (max-width:480px) {
+    html {
+        background-color: lightgreen;
+    }
+}  */
+
+html,
+body,
+#app {
+    font-size: 30px;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    /* min-width: 1600px; */
+}
+
+.el-tree-node>.el-tree-node__children {
+    overflow: visible !important;
+}
+
+.el-tree-node>.el-collapse-transition-leave-active {
+    overflow: hidden !important;
+}
+
+.el-tree-node>.el-collapse-transition-enter-active {
+    overflow: hidden !important;
+}
+.currentHeightLight{
+    font-weight:900;
+}
