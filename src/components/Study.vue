@@ -75,9 +75,6 @@ window.onresize = reSizeCommonLayout
     p {
         word-break: break-all;
     }
-    .input{
-        
-    }
     .el-textarea {
         display: block;
         width: 50%;
