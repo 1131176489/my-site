@@ -9,7 +9,7 @@ export default {
                 let headerHeight = (window.document.documentElement.getElementsByClassName("header")[0] as HTMLElement).scrollHeight
                 let container = <HTMLElement>window.document.documentElement.getElementsByClassName("container")[0]
                 container.style.height = offsetHeight_ - headerHeight + "px"
-                console.log(container.style.height)
+                // console.log(container.style.height)
             }, 100)
         }
     }
