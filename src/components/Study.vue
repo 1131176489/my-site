@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { StudyStore } from '../assets/Study'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
 import type Node from 'element-plus/es/components/tree/src/model/node'
 import { ElMessage, ElMessageBox, ElTree, TreeNode } from 'element-plus';
+import type { UploadInstance, UploadProps, UploadRawFile } from 'element-plus'
 import { update } from 'lodash';
 import { da } from 'element-plus/es/locale';
 const treeRef = ref<InstanceType<typeof ElTree>>()
@@ -20,6 +21,7 @@ interface Tree {
         children?: Tree[],
         value?: string,
         parent?: string,
+        pic?: string
 }
 interface Info {
         _id: string,
@@ -273,67 +275,147 @@ const removeMany = async () => {
 
 
 }
-const test = () => {
 
+
+const imageUrl = ref('')
+const actionUrl = ref("http://192.168.0.106:9000/api/pic")
+const auth = reactive({ Authorization: "Bearer " + localStorage.getItem("token") })
+const handleAvatarSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
+        imageUrl.value = URL.createObjectURL(uploadFile.raw!)
+}
+
+const beforeAvatarUpload: UploadProps['beforeUpload'] = (rawFile) => {
+        if (key.value == "") {
+                ElMessage({
+                        message: '描述不能为空！',
+                        type: 'warning',
+                })
+                return false
+        }
+        if (rawFile.type.includes("image") === false) {
+                ElMessage.error('请上传图片类型文件')
+                return false
+        } else if (rawFile.size / 1024 / 1024 > 10) {
+                ElMessage.error('文件大小不能超过10M')
+                return false
+        }
+        return true
+}
+const upload = ref<UploadInstance>()
+const submitUpload = () => {
+        upload.value!.submit()
 }
 </script>
 
 
 <template>
+
+
         <div class="common-layout">
                 <el-container>
+
                         <el-main>
-                                <div class="input">
+                                <!-- <el-form>
                                         <el-input v-model="key" :rows="10" type="textarea"
                                                   placeholder="请输入描述"
-                                                  :autosize="{ minRows: 2, maxRows: 10 }" resize="none" />
+                                                  :autosize="{ minRows: 5, maxRows: 8 }" resize="none" />
                                         <el-input v-model="value" :rows="10" type="textarea"
                                                   placeholder="请输入解答"
-                                                  :autosize="{ minRows: 2, maxRows: 10 }" resize="none" />
+                                                  :autosize="{ minRows: 5, maxRows: 8 }" resize="none" />
                                         <el-button type="primary" v-bind:disabled="modifydisabled"
                                                    v-on:click="update">确认修改</el-button>
                                         <el-button type="primary" v-bind:disabled="removeManydisabled"
                                                    v-on:click="removeMany">批量删除</el-button>
                                         <el-button type="primary"
                                                    v-on:click="append1">增加分类</el-button>
-                                        <!-- {{ data }} -->
-                                </div>
+                                </el-form> -->
+                                <el-form label-position="top">
+                                        <el-form-item label="描述">
+                                                <el-input v-model="key" :rows="10" type="textarea"
+                                                          placeholder="请输入描述"
+                                                          :autosize="{ minRows: 3, maxRows: 6 }" resize="none" />
+                                        </el-form-item>
+                                        <el-form-item label="解答">
+                                                <el-input v-model="value" :rows="10" type="textarea"
+                                                          placeholder="请输入解答"
+                                                          :autosize="{ minRows: 8, maxRows: 8 }" resize="none" />
+                                        </el-form-item>
+                                        <el-form-item>
+                                                <el-button type="primary" v-bind:disabled="modifydisabled"
+                                                           v-on:click="update">确认修改</el-button>
+                                                <el-button type="primary" v-bind:disabled="removeManydisabled"
+                                                           v-on:click="removeMany">批量删除</el-button>
+
+                                        </el-form-item>
+                                        <el-form-item>
+                                                <el-button type="primary"
+                                                           v-on:click="append1">增加分类</el-button>
+
+                                        </el-form-item>
+                                        <el-form-item>
+                                                <el-upload
+                                                           :auto-upload="false"
+                                                           name="pic"
+                                                           v-bind:headers="auth"
+                                                           ref="upload"
+                                                           class="avatar-uploader"
+                                                           v-bind:action="actionUrl"
+                                                           :show-file-list="false"
+                                                           :on-success="handleAvatarSuccess"
+                                                           :before-upload="beforeAvatarUpload">
+                                                        <template #trigger>
+                                                                <el-button type="primary">选择文件</el-button>
+                                                        </template>
+                                                        <el-button type="success" @click="submitUpload">
+                                                                点击上传
+                                                        </el-button>
+                                                </el-upload>
+                                        </el-form-item>
+                                </el-form>
                         </el-main>
                         <el-aside>
-                                <div class="custom-tree-container">
-                                        <el-tree
-                                                 v-on:node-click="nodeclick"
-                                                 v-on:check="clickCheck"
-                                                 v-bind:expand-on-click-node="isexpand"
-                                                 v-bind:data="data"
-                                                 show-checkbox
-                                                 node-key="id"
-                                                 default-expand-all
-                                                 ref="treeRef">
-                                                <template #default="{ node, data }">
-                                                        <span class="custom-tree-node">
-                                                                <span>{{ node.label }}</span>
-                                                                <span>
-                                                                        <a @click.stop="modifyClick(data)"
-                                                                           style="font-size: 16px;"> 修改 </a>
-                                                                        <a @click.stop="append(data)"
-                                                                           style="font-size: 16px;"> 添加 </a>
-                                                                        <a style="margin-left: 8px;font-size: 16px;"
-                                                                           @click.stop="remove(node, data)"> 删除 </a>
+                                <el-scrollbar>
+                                        <div class="custom-tree-container">
+                                                <el-tree
+                                                         v-on:node-click="nodeclick"
+                                                         v-on:check="clickCheck"
+                                                         v-bind:expand-on-click-node="isexpand"
+                                                         v-bind:data="data"
+                                                         show-checkbox
+                                                         node-key="id"
+                                                         default-expand-all
+                                                         ref="treeRef">
+                                                        <template #default="{ node, data }">
+                                                                <span class="custom-tree-node">
+                                                                        <span>{{ node.label }}</span>
+                                                                        <span>
+                                                                                <a @click.stop="modifyClick(data)"
+                                                                                   style="font-size: 16px;">
+                                                                                        修改
+                                                                                </a>
+                                                                                <a @click.stop="append(data)"
+                                                                                   style="font-size: 16px;">
+                                                                                        添加
+                                                                                </a>
+                                                                                <a style="margin-left: 8px;font-size: 16px;"
+                                                                                   @click.stop="remove(node, data)">
+                                                                                        删除 </a>
+                                                                        </span>
                                                                 </span>
-                                                        </span>
-                                                </template>
-                                        </el-tree>
-                                </div>
-                                <!-- <el-scrollbar height="100%">
-                                        <p v-for="item in data" v-bind:key="item.id" class="scrollbar-demo-item">
-                                                {{ item.key }} ==== {{ item.value }}
-                                        </p>
-                                </el-scrollbar> -->
+                                                        </template>
+                                                </el-tree>
+                                        </div>
+                                </el-scrollbar>
                         </el-aside>
                 </el-container>
-
         </div>
+
+
+        <!-- <div style="height: 100%; display: flex;">
+
+
+        </div> -->
+
 </template>
 
 
@@ -343,67 +425,71 @@ const test = () => {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        /* font-size: 14px; */
         padding-right: 8px;
         margin: 8px 0;
-        /* padding-top: 8px; */
 }
 
 .el-tree {
-        font-size: 24px;
+        font-size: 20px;
 }
 
-.el-tree-node {
+.el-aside {
+        width: 500px;
+}
+
+.common-layout,
+.el-container {
+        height: 100%;
+}
+
+/* .el-form{
+        display: inline;
+} */
+.el-scrollbar {
+        height: 100%;
+        display: inline;
+}
+
+/* .el-tree-node {
         margin: 10px 0 0;
+} */
+@media screen and (max-width:764px) {
+        .el-aside {
+                width: 200px;
+                /* background-color: ; */
+        }
 }
 
-@media screen and (min-width:765px) {
+/* @media screen and (min-width:765px) {
         .el-container {
                 height: 100%;
-
         }
-
-        .el-main {
-                height: 100%;
-        }
-
-        .el-aside {
-                height: 100%;
-                margin-right: 8%;
-                width: 500px;
-        }
-
         .scrollbar-demo-item {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                /* height: 50px; */
                 margin: 10px;
                 text-align: center;
                 border-radius: 4px;
                 background: var(--el-color-primary-light-9);
                 color: var(--el-color-primary);
         }
-
         p {
                 word-break: break-all;
         }
-
         .el-textarea {
                 display: block;
-                width: 100%;
-                /* height: 300px; */
+                width: 100%; 
                 font-size: 24px;
                 font-family: 'Times New Roman', Times, serif;
                 font-weight: 900;
         }
-
         .el-textarea__inner {
                 font-weight: 900;
         }
-}
+} */
 
-@media screen and (max-width:764px) {
+/* @media screen and (max-width:764px) {
         .el-container {
                 height: 100%;
 
@@ -423,7 +509,7 @@ const test = () => {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                /* height: 50px; */
+               
                 margin: 10px;
                 text-align: center;
                 border-radius: 4px;
@@ -438,7 +524,7 @@ const test = () => {
 
         .el-textarea {
                 width: 100%;
-                /* height: 300px; */
+               
                 font-size: 20px;
                 font-family: 'Times New Roman', Times, serif;
                 font-weight: 900;
@@ -448,5 +534,5 @@ const test = () => {
         .el-textarea__inner {
                 font-weight: 900;
         }
-}
+} */
 </style>
