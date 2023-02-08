@@ -1,69 +1,53 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref } from 'vue';
-import { StudyStore } from '../assets/Study'
-import { storeToRefs } from 'pinia'
+import { useStudyStore } from '../assets/Study'
+import { ElMessage, ElMessageBox, ElTree } from 'element-plus'
+import type { UploadInstance, UploadProps, UploadRawFile, ElAside } from 'element-plus'
+import type { Tree, Info } from "../assets/Study"
 import axios from 'axios'
 import type Node from 'element-plus/es/components/tree/src/model/node'
-import { ElMessage, ElMessageBox, ElTree, TreeNode } from 'element-plus';
-import type { UploadInstance, UploadProps, UploadRawFile, ElAside } from 'element-plus'
-import type { Tree } from "../assets/Study"
-
 const treeRef = ref<InstanceType<typeof ElTree>>()
+const upload = ref<UploadInstance>()
+//树状组件
 const modifydisabled = ref(true)
 const isexpand = ref(false)
 const removeManydisabled = ref(true)
 const showCheckbox = ref(false)
 const defaultEexpandAll = ref(true)
-const upload = ref<UploadInstance>()
+const checkStrictly = ref(true)
+const checkOnClickNode = ref(true)
+//上传文件组件
 const uploadData = ref({})
-
-let { key, value, info, data, node, checkNodeRemove } = storeToRefs(StudyStore())
-console.log("--------------------------------------------")
-StudyStore().$subscribe((mutation, state) => {
-        console.log(mutation)
-        console.log(state)
-
-},{keep:true})
-const elAsideStyle = reactive({
+const imageUrl = ref('')
+const actionUrl = ref("http://192.168.0.106:9000/api/pic")
+const auth = reactive({ Authorization: "Bearer " + localStorage.getItem("token") })
+const fits = ['fill', 'contain', 'cover', 'none', 'scale-down']
+const url = 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg'
+const StudyStore = useStudyStore()
+//其他
+const elAsideStyle = ref({
         border: "1px solid #d9ecff",
         width: "200px"
 })
-
-interface Info {
-        _id: string,
-        insertId: number,
-        useremail: string,
-        data: Tree[]
-}
 onMounted(() => {
         init()
 })
-onUnmounted(() => {
-        console.log("onUnmounted",info)
-})
-function reSizeCommonLayout(): void {
+const reSizeCommonLayout = (): void => {
         let offsetHeight_ = (window.document.documentElement as HTMLElement).offsetHeight
         let headerHeight = (window.document.documentElement.getElementsByClassName("header")[0] as HTMLElement).scrollHeight
         let container = <HTMLElement>window.document.documentElement.getElementsByClassName("common-layout")[0]
         container.style.height = offsetHeight_ - headerHeight + "px"
 }
-window.onresize = reSizeCommonLayout
-
-const init = async () => {
-        // setTimeout(reSizeCommonLayout, 100)
-        const { data: res }: { data: { msg: string, status: number, info: Info } } = await axios.get("/api/studylist")
-        console.log(123, info)
-        info.value = res.info
-        data.value.push(...info.value.data)
-        console.log(456, info)
-}
-
 const ondrag = (e: DragEvent) => {
-        elAsideStyle.width = e.x - 27 + "px"
+        elAsideStyle.value.width = e.x - 27 + "px"
 }
-
+window.onresize = reSizeCommonLayout
+const init = async () => {
+        const { data: res }: { data: { msg: string, status: number, info: Info } } = await axios.get("/api/studylist")
+        StudyStore.info = res.info
+}
 const append = async () => {
-        if (key.value == "") {
+        if (StudyStore.key == "") {
                 ElMessage({
                         message: '描述不能为空',
                         type: 'warning',
@@ -71,15 +55,14 @@ const append = async () => {
                 modifydisabled.value = true
                 return
         }
-        const newChild = { id: info.value.insertId++, label: key.value, value: value.value }
-        if (!node.value.children) {
-                node.value.children = []
+        const newChild = { id: StudyStore.info.insertId++, label: StudyStore.key, value: StudyStore.value }
+        if (!StudyStore.node.children) {
+                StudyStore.node.children = []
         }
-        node.value.children.push(newChild)
-        info.value.data = data.value
+        StudyStore.node.children.push(newChild)
         try {
                 const r = await axios.post("/api/studyAdd", {
-                        info: info.value
+                        info: StudyStore.info
                 })
                 if (r.data.status == 0) {
                         ElMessage({
@@ -96,30 +79,29 @@ const append = async () => {
         }
 }
 const append1 = async () => {
-        if (key.value == "") {
+        if (StudyStore.key == "") {
                 ElMessage({
                         message: '描述不能为空',
                         type: 'warning',
                 })
                 return
         }
-        data.value.push({
-                label: key.value,
-                id: info.value.insertId++,
+        StudyStore.info.data.push({
+                label: StudyStore.key,
+                id: StudyStore.info.insertId++,
                 children: []
         })
-        info.value.data = data.value
         try {
                 const r = await axios.post("/api/studyUpdate", {
-                        info: info.value
+                        info: StudyStore.info
                 })
                 if (r.data.status == 0) {
                         ElMessage({
                                 message: '添加成功！',
                                 type: 'success',
                         })
-                        key.value = ""
-                        value.value = ""
+                        StudyStore.key = ""
+                        StudyStore.value = ""
                 }
         }
         catch (err) {
@@ -128,7 +110,6 @@ const append1 = async () => {
                         type: 'error',
                 })
         }
-        // info.value.data = data.value
 }
 const remove = () => {
         ElMessageBox.confirm('确定要删除吗？', '警告', {
@@ -138,17 +119,14 @@ const remove = () => {
                 type: 'warning',
         }
         ).then(async () => {
-                console.log(node.value)
-                treeRef.value?.remove(node.value)
-                console.log(data.value)
-                info.value.data = data.value
+                treeRef.value?.remove(StudyStore.node)
                 try {
                         const r = await axios.post("/api/studyDel", {
-                                info: info.value
+                                info: StudyStore.info
                         })
                         if (r.data.status == 0) {
-                                key.value = ""
-                                value.value = ""
+                                StudyStore.key = ""
+                                StudyStore.value = ""
                                 modifydisabled.value = true
 
                                 ElMessage({
@@ -172,7 +150,7 @@ const remove = () => {
 
 }
 const update = async () => {
-        if (key.value == "") {
+        if (StudyStore.key == "") {
                 ElMessage({
                         message: '描述不能为空！',
                         type: 'warning',
@@ -180,11 +158,11 @@ const update = async () => {
                 modifydisabled.value = true
                 return
         }
-        node.value.label = key.value
-        node.value.value = value.value
+        StudyStore.node.label = StudyStore.key
+        StudyStore.node.value = StudyStore.value
         try {
                 const r = await axios.post("/api/studyUpdate", {
-                        info: info.value
+                        info: StudyStore.info
                 })
                 if (r.data.status == 0) {
                         ElMessage({
@@ -192,8 +170,8 @@ const update = async () => {
                                 type: 'success',
                         })
                         modifydisabled.value = true
-                        key.value = ""
-                        value.value = ""
+                        StudyStore.key = ""
+                        StudyStore.value = ""
                 }
         }
         catch (err) {
@@ -206,19 +184,17 @@ const update = async () => {
 
 }
 const nodeclick = async (node_: Tree) => {
-        node.value = node_
+        StudyStore.node = node_
         modifydisabled.value = false
         if (node_.children != undefined) {
-                key.value = ""
-                value.value = ""
+                StudyStore.key = ""
+                StudyStore.value = ""
                 return
         }
-        key.value = node_.label
-        value.value = node_.value as string
+        StudyStore.key = node_.label
+        StudyStore.value = node_.value as string
 }
 const clickCheck = (f1: any, f2: any) => {
-        // removeManydisabled.value = !removeManydisabled.value
-        // console.log(f1)
         console.log(treeRef)
         console.log(f2)
         if ((f2.checkedNodes).length == 0) {
@@ -226,10 +202,8 @@ const clickCheck = (f1: any, f2: any) => {
         }
         else {
                 removeManydisabled.value = false
-                checkNodeRemove.value = f2.checkedNodes
+                StudyStore.checkNodeRemove = f2.checkedNodes
         }
-
-        // treeRef.value?.remove(f1)
 }
 const removeMany = async () => {
         ElMessageBox.confirm(
@@ -242,20 +216,18 @@ const removeMany = async () => {
                         type: 'warning',
                 }
         ).then(async () => {
-
                 try {
-
-                        for (let i of checkNodeRemove.value) {
+                        for (let i of StudyStore.checkNodeRemove) {
                                 treeRef.value?.remove(i as unknown as Node)
-                                info.value.data = data.value
+
                         }
                         try {
                                 const r = await axios.post("/api/studyDel", {
-                                        info: info.value
+                                        info: StudyStore.info
                                 })
                                 if (r.data.status == 0) {
-                                        key.value = ""
-                                        value.value = ""
+                                        StudyStore.key = ""
+                                        StudyStore.value = ""
                                         showCheckbox.value = false
                                         removeManydisabled.value = true
                                         ElMessage({
@@ -287,22 +259,15 @@ const removeMany = async () => {
 
 
 }
-
 const selectMany = () => {
-        showCheckbox.value = true
+        showCheckbox.value = !showCheckbox.value
 }
-
-
-const imageUrl = ref('')
-const actionUrl = ref("http://192.168.0.106:9000/api/pic")
-const auth = reactive({ Authorization: "Bearer " + localStorage.getItem("token") })
 const handleAvatarSuccess: UploadProps['onSuccess'] = (response, uploadFile, uploadFiles) => {
         imageUrl.value = URL.createObjectURL(uploadFile.raw!)
         uploadFiles.splice(0)
 }
-
 const beforeAvatarUpload: UploadProps['beforeUpload'] = async (rawFile) => {
-        if (key.value == "") {
+        if (StudyStore.key == "") {
                 ElMessage({
                         message: '描述不能为空！',
                         type: 'warning',
@@ -316,19 +281,16 @@ const beforeAvatarUpload: UploadProps['beforeUpload'] = async (rawFile) => {
                 ElMessage.error('文件大小不能超过10M')
                 return false
         }
-        console.log(rawFile.name)
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
         const src_ = "pic" + '-' + uniqueSuffix + "." + rawFile.name.split(".").reverse()[0]
-        if (!node.value.pic) {
-                node.value.pic = []
+        if (!StudyStore.node.pic) {
+                StudyStore.node.pic = []
         }
-        node.value.pic?.push({
+        StudyStore.node.pic?.push({
                 src: src_
         })
-        info.value.data = data.value
         uploadData.value = {
-                info: JSON.stringify(info.value),
-
+                info: JSON.stringify(StudyStore.info),
         }
         return true
 }
@@ -337,25 +299,22 @@ const handleChange: UploadProps['onChange'] = (uploadFile, uploadFiles) => {
 const submitUpload = () => {
         upload.value!.submit()
 }
-
-const fits = ['fill', 'contain', 'cover', 'none', 'scale-down']
-const url = 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg'
 </script>
-
-
 <template>
-
-
         <div class="common-layout">
                 <el-container>
                         <el-aside v-bind:style="elAsideStyle">
                                 <el-scrollbar>
                                         <div class="custom-tree-container">
                                                 <el-tree
+                                                         highlight-current
+                                                         v-bind:check-on-click-node="checkOnClickNode"
+                                                         v-bind:indent="20"
+                                                         v-bind:check-strictly="checkStrictly"
                                                          v-on:node-click="nodeclick"
                                                          v-on:check="clickCheck"
                                                          v-bind:expand-on-click-node="isexpand"
-                                                         v-bind:data="data"
+                                                         v-bind:data="StudyStore.info.data"
                                                          v-bind:show-checkbox="showCheckbox"
                                                          node-key="id"
                                                          v-bind:default-expand-all="defaultEexpandAll"
@@ -363,19 +322,6 @@ const url = 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.
                                                         <template #default="{ node, data }">
                                                                 <span class="custom-tree-node">
                                                                         <span>{{ node.label }}</span>
-                                                                        <!-- <span>
-                                                                                <a @click.stop="modifyClick(data)"
-                                                                                   style="font-size: 16px;">
-                                                                                        修改
-                                                                                </a>
-                                                                                <a @click.stop="append(data)"
-                                                                                   style="font-size: 16px;">
-                                                                                        添加
-                                                                                </a>
-                                                                                <a style="margin-left: 8px;font-size: 16px;"
-                                                                                   @click.stop="remove(node, data)">
-                                                                                        删除 </a>
-                                                                        </span> -->
                                                                 </span>
                                                         </template>
                                                 </el-tree>
@@ -415,28 +361,24 @@ const url = 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.
                                                            ref="upload"
                                                            class="avatar-uploader"
                                                            multiple>
-
                                                         <template #trigger>
                                                                 <el-button type="primary">添加图片</el-button>
                                                         </template>
-
                                                         <el-button type="success" @click="submitUpload"
                                                                    v-bind:disabled="modifydisabled">
                                                                 点击上传
                                                         </el-button>
-
                                                 </el-upload>
                                         </el-form-item>
                                         <el-form-item label="描述">
-                                                <el-input v-model="key" :rows="10" type="textarea"
+                                                <el-input v-model="StudyStore.key" :rows="10" type="textarea"
                                                           placeholder="请输入描述"
                                                           :autosize="{ minRows: 3, maxRows: 6 }" />
                                         </el-form-item>
-
                                         <el-form-item label="解答">
                                                 <el-row v-bind:gutter="20" :style="{ width: '100%' }">
                                                         <el-col :span="12">
-                                                                <el-input v-model="value" v-bind:rows="10"
+                                                                <el-input v-model="StudyStore.value" v-bind:rows="10"
                                                                           type="textarea"
                                                                           placeholder="请输入解答" />
                                                         </el-col>
@@ -447,8 +389,6 @@ const url = 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.
                                                                         <el-image
                                                                                   src="http://192.168.0.106:9000/bunny.jpg" />
                                                                 </el-scrollbar>
-
-
                                                         </el-col>
                                                 </el-row>
                                         </el-form-item>
@@ -456,16 +396,7 @@ const url = 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.
                         </el-main>
                 </el-container>
         </div>
-
-
-        <!-- <div style="height: 100%; display: flex;">
-
-
-        </div> -->
-
-</template>
-
-
+</template> 
 <style scoped>
 .custom-tree-node {
         flex: 1;
@@ -507,13 +438,9 @@ const url = 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.
         font-weight: 900;
 }
 
-/* .el-tree-node {
-        margin: 10px 0 0;
-} */
 @media screen and (max-width:764px) {
         .el-aside {
                 width: 200px;
-                /* background-color: ; */
         }
 }
 
