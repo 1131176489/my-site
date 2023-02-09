@@ -2,15 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    /* overflow: hidden; */
 }
-
-/* @media screen and (max-width:480px) {
-    html {
-        background-color: lightgreen;
-    }
-}  */
-
 html,
 body,
 #app {
@@ -18,7 +10,6 @@ body,
     height: 100%;
     width: 100%;
     box-sizing: border-box;
-    /* min-width: 1600px; */
 }
 
 .el-tree-node>.el-tree-node__children {
