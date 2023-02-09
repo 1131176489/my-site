@@ -26,7 +26,7 @@ const imageUrl = ref('')
 const actionUrl = ref("http://192.168.0.106:9000/api/pic")
 const auth = reactive({ Authorization: "Bearer " + localStorage.getItem("token") })
 const StudyStore = useStudyStore()
-const count = ref(0)
+const show = ref(true)
 const filename :string[]= reactive([])
 //其他
 const havePic = ref(true)
@@ -65,20 +65,12 @@ const nodeclick = async (node_: Tree) => {
         if (!selectManyKey.value) {
                 StudyStore.setKeyValue(StudyStore.node.label, StudyStore.node.value as string)
         }
-        else if (selectOneKey.value == true) {
-                selectOneMsg.value = "选择一个项目"
-                showCheckbox.value = false
-                checkOnClickNode.value = false
-                selectOneKey.value = false
-                appendOneKey.value = false
-                uploadDisabled.value = true
-                if (StudyStore.node) {
-                        treeRef.value?.setChecked(StudyStore.node!.id, false, false)
-                }
-                StudyStore.clearKeyValue()
-                StudyStore.node = null
+        else if (selectManyKey.value) {
+                StudyStore.checkNode = treeRef.value?.getCheckedKeys()  as number[]
         }
+        appendChildrenKey.value = false
 }
+//修改一个项目的回调
 const updateOne = async () => {
         if (!StudyStore.node) {
                 ElMessage({
@@ -96,7 +88,6 @@ const updateOne = async () => {
         }
         StudyStore.node.label = StudyStore.key
         StudyStore.node.value = StudyStore.value
-
         try {
                 const r = await axios.post("/api/studyUpdate", {
                         info: StudyStore.info
@@ -107,73 +98,17 @@ const updateOne = async () => {
                                 type: 'success',
                         })
                         getData()
-                        selectOne()
                 }
         }
         catch (err) {
                 console.log(err)
                 ElMessage({
-                        message: '修改失败！',
+                        message: '修改失败！失败原因：' + (err as Error).message,
                         type: 'error',
                 })
         }
 }
-const appendPic = () => {
-        if (!StudyStore.node) {
-                ElMessage({
-                        message: '请选择一个项目',
-                        type: 'warning',
-                })
-                return
-        }
-        uploadDisabled.value = false
-        if (!StudyStore.node.pic) {
-                StudyStore.node.pic = []
-        }
-}
-const handlePicProgress: UploadProps['onProgress'] = (evt, uploadFile, uploadFiles) => {
-        console.log(evt)
-        console.log( count.value++)
-}
-const handlePicSuccess: UploadProps['onSuccess'] = (response, uploadFile, uploadFiles) => {
-        imageUrl.value = URL.createObjectURL(uploadFile.raw!)
-        uploadFiles.splice(0)
-        console.log("handlePicSuccess", response)
-        filename.splice(0)
-//        console.log( count.value++)
-}
-const beforePicUpload: UploadProps['beforeUpload'] = async (rawFile) => {
-        if (!StudyStore.node) {
-                ElMessage({
-                        message: '请选择一个项目',
-                        type: 'warning',
-                })
-                return
-        }
-        if (rawFile.type.includes("image") === false) {
-                ElMessage.error('请上传图片类型文件')
-                return false
-        } else if (rawFile.size / 1024 / 1024 > 10) {
-                ElMessage.error('文件大小不能超过10M')
-                return false
-        }
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-        const src_ = "pic" + '-' + uniqueSuffix + "." + rawFile.name.split(".").reverse()[0]
-        StudyStore.node!.pic?.push({
-                src: src_
-        })
-        filename.push(src_)
-        uploadData.value = {
-                info: JSON.stringify(StudyStore.info),
-                filename: JSON.stringify(filename),
-                flag:uniqueSuffix,
-        }
-        console.log(uploadData.value)
-        return true
-}
-const submit = () => {
-        upload.value?.submit()
-}
+//删除一个项目的回调
 const removeOne = () => {
         if (!StudyStore.node) {
                 ElMessage({
@@ -200,19 +135,19 @@ const removeOne = () => {
                                         type: 'success',
                                 })
                                 getData()
-                                selectOne()
                         }
                 }
                 catch (err) {
                         ElMessage({
-                                message: '删除失败！',
+                                message: '删除失败！失败原因：' + (err as Error).message,
                                 type: 'error',
                         })
                 }
         }).catch(() => { })
 
 }
-const appendOne = () => {
+//添加一个子项目的回调
+const appendChildren = () => {
         if (!StudyStore.node) {
                 ElMessage({
                         message: '请选择一个项目',
@@ -221,35 +156,122 @@ const appendOne = () => {
                 return
         }
         StudyStore.clearKeyValue()
-        ElMessage({
-                message: '请输入描述和解答，可添加图片',
-                type: 'success',
-        })
-        appendOneKey.value = true
-        // const newChild = { id: StudyStore.info.insertId++, label: StudyStore.key, value: StudyStore.value }
-        // if (!StudyStore.node!.children) {
-        //         StudyStore.node.children = []
-        // }
-        // StudyStore.node!.children.push(newChild)
-        // try {
-        //         const r = await axios.post("/api/studyAdd", {
-        //                 info: StudyStore.info
-        //         })
-        //         if (r.data.status == 0) {
-        //                 ElMessage({
-        //                         message: '添加成功！',
-        //                         type: 'success',
-        //                 })
-        //         }
-        // }
-        // catch (err) {
-        //         ElMessage({
-        //                 message: '添加失败！',
-        //                 type: 'error',
-        //         })
-        // }
+        ElMessage({ message: '请输入描述和解答', type: 'success', })
+        appendChildrenKey.value = true
 }
+//确认添加子项目
+const appendChildrenConfirm = async () => {
+        if (!StudyStore.node) {
+                ElMessage({
+                        message: '请选择一个项目',
+                        type: 'warning',
+                })
+                return
+        }
+        if (!StudyStore.key) {
+                ElMessage({
+                        message: '描述不能为空',
+                        type: 'warning',
+                })
+                return
+        }
 
+        const newChild = { id: StudyStore.info.insertId++, label: StudyStore.key, value: StudyStore.value }
+        if (!StudyStore.node!.children) {
+                StudyStore.node.children = []
+        }
+        StudyStore.node!.children.push(newChild)
+        try {
+                const r = await axios.post("/api/studyAdd", {
+                        info: StudyStore.info
+                })
+                if (r.data.status == 0) {
+                        ElMessage({ message: '添加成功！', type: 'success', })
+                        StudyStore.clearKeyValue()
+                        getData()
+                }
+        }
+        catch (err) {
+                ElMessage({
+                        message: '添加失败！失败原因：' + (err as Error).message,
+                        type: 'error',
+                })
+        }
+}
+const appendPic = () => {
+        if (!StudyStore.node) {
+                ElMessage({
+                        message: '请选择一个项目',
+                        type: 'warning',
+                })
+                return
+        }
+        uploadDisabled.value = false
+        if (!StudyStore.node.pic) {
+                StudyStore.node.pic = []
+        }
+}
+const imageError = () => {
+        show.value = false
+        setTimeout(() => {
+                
+                show.value = true
+                console.log(999)
+       },1000)
+}
+const handlePicSuccess: UploadProps['onSuccess'] = (response, uploadFile, uploadFiles) => {
+        imageUrl.value = URL.createObjectURL(uploadFile.raw!)
+        uploadFiles.splice(0)
+        filename.splice(0)
+}
+const beforePicUpload: UploadProps['beforeUpload'] = async (rawFile) => {
+        if (!StudyStore.node) {
+                ElMessage({
+                        message: '请选择一个项目',
+                        type: 'warning',
+                })
+                return
+        }
+        if (rawFile.type.includes("image") === false) {
+                ElMessage.error('请上传图片类型文件')
+                return false
+        } else if (rawFile.size / 1024 / 1024 > 10) {
+                ElMessage.error('文件大小不能超过10M')
+                return false
+        }
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        const src_ = "pic" + '-' + uniqueSuffix + "." + rawFile.name.split(".").reverse()[0]
+        StudyStore.node!.pic?.push({
+                src: src_
+        })
+        filename.push(src_)
+        uploadData.value = {
+                info: JSON.stringify(StudyStore.info),
+                filename: JSON.stringify(filename),
+                flag: uniqueSuffix,
+        }
+        console.log(uploadData.value)
+        return true
+}
+const delPic = (item: string) => {
+        StudyStore.node?.pic?.some((value, index, array) => {
+                if (value.src == item) {
+                        array.splice(index, 1)
+                        return true
+                }
+        })
+        axios.post("/api/picDel", {
+                delFileName: item,
+                info: StudyStore.info
+        }).then(() => {
+                ElMessage({ type: "success", message: "删除成功" })
+        }).catch((err) => {
+                ElMessage({ type: "error", message: "删除失败，失败原因：" + err.message })
+        }).finally(() => {
+                getData()
+        })
+}
+//批量选择
 const selectMany = () => {
         if (selectManyKey.value == false) {
                 StudyStore.clearKeyValue()
@@ -271,32 +293,52 @@ const selectMany = () => {
                 StudyStore.node = null
         }
 }
-const nodeclick = async (node_: Tree) => {
-
-        if (selectOneKey.value == true) {
-                StudyStore.node = node_
-                StudyStore.checkNode = treeRef.value?.getCheckedKeys() as number[]
-                for (let i of StudyStore.checkNode) {
-                        treeRef.value?.setChecked(i, false, false)
+//批量删除
+const removeMany = async () => {
+        ElMessageBox.confirm(
+                '确定要删除全部所选内容吗？',
+                '警告',
+                {
+                        distinguishCancelAndClose: true,
+                        cancelButtonText: '取消',
+                        confirmButtonText: '确定',
+                        type: 'warning',
                 }
-                treeRef.value?.setChecked(StudyStore.node.id, true, false)
-                StudyStore.setKeyValue(StudyStore.node.label, StudyStore.node.value as string)
-        }
-        else if (selectManyKey.value == true) {
-                // StudyStore.node = node_
+        ).then(async () => {
+                try {
+                        for (let i of StudyStore.checkNode) {
+                                treeRef.value?.remove(i as unknown as Node)
+                        }
+                        try {
+                                const r = await axios.post("/api/studyDel", {
+                                        info: StudyStore.info
+                                })
+                                if (r.data.status == 0) {
+                                        ElMessage({
+                                                message: '删除成功！',
+                                                type: 'success',
+                                        })
+                                        getData()
+                                }
+                        }
+                        catch (err) {
+                                ElMessage({
+                                        message: '删除失败！失败原因：'+(err as Error).message,
+                                        type: 'error',
+                                })
+                                getData()
+                        }
+                }
+                catch (err) {
+                        ElMessage({
+                                message: '删除失败！失败原因：'+(err as Error).message,
+                                type: 'error',
+                        })
+                }
+        }).catch(() => {
 
-                StudyStore.checkNode = treeRef.value?.getCheckedKeys() as number[]
-                // StudyStore.setKeyValue(StudyStore.node.label, StudyStore.node.value as string)
-        }
-        else {
-                StudyStore.setKeyValue(node_.label, node_.value as string)
-                StudyStore.node = node_
-        }
+        })
 }
-const currentChange = () => {
-        // current-change
-}
-
 const append1 = async () => {
         if (StudyStore.key == "") {
                 ElMessage({
@@ -308,7 +350,8 @@ const append1 = async () => {
         StudyStore.info.data.push({
                 label: StudyStore.key,
                 id: StudyStore.info.insertId++,
-                children: []
+                children: [],
+                value:""
         })
         try {
                 const r = await axios.post("/api/studyUpdate", {
@@ -330,75 +373,6 @@ const append1 = async () => {
                 })
         }
 }
-
-
-const removeMany = async () => {
-        ElMessageBox.confirm(
-                '确定要删除全部所选内容吗？',
-                '警告',
-                {
-                        distinguishCancelAndClose: true,
-                        cancelButtonText: '取消',
-                        confirmButtonText: '确定',
-                        type: 'warning',
-                }
-        ).then(async () => {
-                try {
-                        for (let i of StudyStore.checkNode) {
-                                treeRef.value?.remove(i as unknown as Node)
-                        }
-                        try {
-                                const r = await axios.post("/api/studyDel", {
-                                        info: StudyStore.info
-                                })
-                                if (r.data.status == 0) {
-                                        StudyStore.key = ""
-                                        StudyStore.value = ""
-                                        showCheckbox.value = false
-                                        removeManydisabled.value = true
-                                        ElMessage({
-                                                message: '删除成功！',
-                                                type: 'success',
-                                        })
-                                }
-                        }
-                        catch (err) {
-                                ElMessage({
-                                        message: '删除失败！',
-                                        type: 'error',
-                                })
-                                location.reload()
-                        }
-                        finally {
-
-                        }
-                }
-                catch (err) {
-                        ElMessage({
-                                message: '删除失败！',
-                                type: 'error',
-                        })
-                }
-        }).catch(() => {
-
-        })
-}
-
-
-const clickCheck = (f1: any, f2: any) => {
-        if ((f2.checkedNodes).length == 0) {
-                removeManydisabled.value = true
-        }
-        else {
-                removeManydisabled.value = false
-                StudyStore.checkNode = f2.checkedNodes
-        }
-}
-
-
-
-const handleChange: UploadProps['onChange'] = (uploadFile, uploadFiles) => {
-}
 </script>
 <template>
         <div class="common-layout">
@@ -415,7 +389,7 @@ const handleChange: UploadProps['onChange'] = (uploadFile, uploadFiles) => {
                                                          v-bind:data="StudyStore.info.data"
                                                          v-bind:show-checkbox="showCheckbox"
                                                          v-on:node-click="nodeclick"
-                                                         v-on:check="clickCheck"
+                
                                                          v-on:current-change=""
                                                          node-key="id"
                                                          highlight-current
@@ -438,48 +412,46 @@ const handleChange: UploadProps['onChange'] = (uploadFile, uploadFiles) => {
                                                 <el-aside v-bind:style="formAside">
                                                         <el-form label-position="top">
                                                                 <el-form-item>
-                                                                        <el-button-group>
-                                                                                <el-button
-                                                                                           type="primary"
-                                                                                           plain
-                                                                                           v-bind:disabled="selectManyKey"
-                                                                                           v-on:click="selectOne">
-                                                                                        {{ selectOneMsg }}
-                                                                                </el-button>
+                                                                        
+
                                                                                 <el-button
                                                                                            type="warning"
                                                                                            plain
-                                                                                           v-bind:disabled="!selectOneKey"
+                                                                                           v-bind:disabled="selectManyKey"
                                                                                            v-on:click="updateOne">
                                                                                         {{ "修改项目" }}
                                                                                 </el-button>
                                                                                 <el-button
                                                                                            type="danger"
                                                                                            plain
-                                                                                           v-bind:disabled="!selectOneKey"
+                                                                                           v-bind:disabled="selectManyKey"
                                                                                            v-on:click="removeOne">
                                                                                         {{ "删除项目" }}
                                                                                 </el-button>
                                                                                 <el-button
                                                                                            type="primary"
                                                                                            plain
-                                                                                           v-bind:disabled="!selectOneKey"
-                                                                                           v-on:click="appendOne">
+                                                                                           v-bind:disabled="selectManyKey"
+                                                                                           v-on:click="appendChildren">
                                                                                         {{ "添加子项目"}}
                                                                                 </el-button>
                                                                                 <el-button
                                                                                            type="primary"
                                                                                            plain
-                                                                                           v-bind:disabled="!appendOneKey || !selectOneKey"
-                                                                                           v-on:click="appendOne">
+                                                                                           v-bind:disabled="!appendChildrenKey||selectManyKey"
+                                                                                           v-on:click="appendChildrenConfirm">
                                                                                         {{ "确认添加"}}
                                                                                 </el-button>
-                                                                        </el-button-group>
+                                                                                <el-button type="primary"
+                                                                                           plain
+                                                                                           v-bind:disabled="selectManyKey"
+                                                                                           v-on:click="append1">
+                                                                                        {{ "添加一个分类" }}
+                                                                                </el-button>
+                                                                       
                                                                 </el-form-item>
                                                                 <el-form-item>
                                                                         <el-upload
-                                                                                v-bind:on-progress="handlePicProgress"
-                                                                                   v-bind:on-change="handleChange"
                                                                                    v-bind:auto-upload="true"
                                                                                    v-bind:action="actionUrl"
                                                                                    v-bind:show-file-list="true"
@@ -494,23 +466,29 @@ const handleChange: UploadProps['onChange'] = (uploadFile, uploadFiles) => {
                                                                                 <template #trigger>
                                                                                         <el-button
                                                                                                    plain
-                                                                                                   v-bind:disabled="!selectOneKey"
+                                                                                                   v-bind:disabled="appendChildrenKey||selectManyKey"
                                                                                                    v-on:click="appendPic"
                                                                                                    type="primary">
-                                                                                                {{ "添加图片(可选)"}}
+                                                                                                {{ "添加图片"}}
                                                                                         </el-button>
                                                                                 </template>
                                                                         </el-upload>
                                                                 </el-form-item>
                                                                 <el-form-item>
-                                                                        
                                                                                 <el-button type="primary"
                                                                                            plain
-                                                                                           v-bind:disabled="selectOneKey"
+                                                                                          v-bind:disabled="!selectManyKey"
+                                                                                           v-on:click="removeMany">
+                                                                                        {{ "批量删除" }}
+                                                                                </el-button>
+                                                                                
+                                                                                <el-button type="primary"
+                                                                                           plain
+                                                                                          
                                                                                            v-on:click="selectMany">
                                                                                         {{ selectManyMsg }}
                                                                                 </el-button>
-                                                                        
+                                                                                
                                                                 </el-form-item>
 
                                                                 <el-form-item label="描述">
@@ -527,19 +505,29 @@ const handleChange: UploadProps['onChange'] = (uploadFile, uploadFiles) => {
                                                                 </el-form-item>
                                                         </el-form>
                                                 </el-aside>
-                                                <el-main v-if="StudyStore.node && StudyStore.node!.pic"
+                                                <el-main v-if="StudyStore.node && StudyStore.node!.pic&&StudyStore.node!.pic.length!=0&&show"
                                                          v-bind:style="scrollbarMain">
                                                         <el-scrollbar style="padding: 20px;border: 1px solid  #d9ecff;">
-                                                                <el-image v-for="( item, index ) in StudyStore.node!.pic"
-                                                                          v-bind:key="index"
-                                                                          fit='scale-down'
-                                                                          v-bind:src="'http://192.168.0.106:9000/'+item.src" style="position: relative;">
-                                                                          
-                                                                          <el-icon>
-                                                                                删除
-                                                                                <CircleClose />
-                                                                        </el-icon>
-                                                                </el-image>
+                                                                <div v-for="( item, index ) in StudyStore.node!.pic" style="position: relative;">
+                                                                        <el-image
+                                                                        v-on:error="imageError"
+                                                                                  v-bind:key="index"
+                                                                                  fit='scale-down'
+                                                                                  v-bind:src="'http://192.168.0.106:9000/'+item.src" />
+                                                                        <div title="点击删除" style="cursor: pointer;" v-on:click="delPic(item.src,)">
+                                                                                 <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" data-v-029747aa=""
+                                                                                style="position: absolute;top: 0px;right: 0px;width: 20px;height: 20px;z-index:5 ;" >
+                                                                                        <path fill="currentColor"
+                                                                                        d="m466.752 512-90.496-90.496a32 32 0 0 1 45.248-45.248L512 466.752l90.496-90.496a32 32 0 1 1 45.248 45.248L557.248 512l90.496 90.496a32 32 0 1 1-45.248 45.248L512 557.248l-90.496 90.496a32 32 0 0 1-45.248-45.248L466.752 512z">
+                                                                        
+                                                                                        </path>
+                                                                                        <path fill="currentColor"
+                                                                                        d="M512 896a384 384 0 1 0 0-768 384 384 0 0 0 0 768zm0 64a448 448 0 1 1 0-896 448 448 0 0 1 0 896z">
+                                                                                        </path>
+                                                                                </svg>
+                                                                        </div>
+                                                                        
+                                                                </div>
                                                         </el-scrollbar></el-main>
                                         </el-container>
                                 </div>
