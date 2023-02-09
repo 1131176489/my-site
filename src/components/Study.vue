@@ -97,7 +97,6 @@ const updateOne = async () => {
                                 message: '修改成功！',
                                 type: 'success',
                         })
-                        getData()
                 }
         }
         catch (err) {
@@ -134,7 +133,6 @@ const removeOne = () => {
                                         message: '删除成功！',
                                         type: 'success',
                                 })
-                                getData()
                         }
                 }
                 catch (err) {
@@ -188,7 +186,6 @@ const appendChildrenConfirm = async () => {
                 if (r.data.status == 0) {
                         ElMessage({ message: '添加成功！', type: 'success', })
                         StudyStore.clearKeyValue()
-                        getData()
                 }
         }
         catch (err) {
@@ -254,12 +251,12 @@ const beforePicUpload: UploadProps['beforeUpload'] = async (rawFile) => {
         return true
 }
 const delPic = (item: string) => {
-        StudyStore.node?.pic?.some((value, index, array) => {
-                if (value.src == item) {
-                        array.splice(index, 1)
-                        return true
+        for (let i = 0; i < (StudyStore.node!.pic as { src: string }[]).length; i++) {
+                if ((StudyStore.node!.pic as { src: string }[])[i].src == item) {
+                        StudyStore.node!.pic?.splice(i, 1)
+                        break
                 }
-        })
+        }
         axios.post("/api/picDel", {
                 delFileName: item,
                 info: StudyStore.info
@@ -268,7 +265,6 @@ const delPic = (item: string) => {
         }).catch((err) => {
                 ElMessage({ type: "error", message: "删除失败，失败原因：" + err.message })
         }).finally(() => {
-                getData()
         })
 }
 //批量选择
@@ -318,7 +314,6 @@ const removeMany = async () => {
                                                 message: '删除成功！',
                                                 type: 'success',
                                         })
-                                        getData()
                                 }
                         }
                         catch (err) {
@@ -326,7 +321,6 @@ const removeMany = async () => {
                                         message: '删除失败！失败原因：'+(err as Error).message,
                                         type: 'error',
                                 })
-                                getData()
                         }
                 }
                 catch (err) {
@@ -510,7 +504,7 @@ const append1 = async () => {
                                                         <el-scrollbar style="padding: 20px;border: 1px solid  #d9ecff;">
                                                                 <div v-for="( item, index ) in StudyStore.node!.pic" style="position: relative;">
                                                                         <el-image
-                                                                        v-on:error="imageError"
+                                                                                
                                                                                   v-bind:key="index"
                                                                                   fit='scale-down'
                                                                                   v-bind:src="'http://192.168.0.106:9000/'+item.src" />
