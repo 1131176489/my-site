@@ -11,18 +11,14 @@ import 'element-plus/theme-chalk/display.css'
 const treeRef = ref<InstanceType<typeof ElTree>>()
 const upload = ref<UploadInstance>()
 //树状组件
-const modifydisabled = ref(true)
 const isexpand = ref(false)
-const removeManydisabled = ref(true)
 const showCheckbox = ref(false)
 const defaultEexpandAll = ref(true)
 const checkStrictly = ref(true)
 const checkOnClickNode = ref(false)
-const selectOneKey = ref(false)
-const selectOneMsg = ref("选择一个项目")
 const selectManyKey = ref(false)
 const selectManyMsg = ref("选择多个项目")
-const appendOneKey = ref(false)
+const appendChildrenKey = ref(false)
 //上传文件组件
 const uploadData = ref({})
 const uploadDisabled = ref(true)
@@ -63,14 +59,11 @@ const getData = async () => {
         const { data: res }: { data: { msg: string, status: number, info: Info } } = await axios.get("/api/studylist")
         StudyStore.info = res.info
 }
-//树状组件
-const selectOne = () => {
-        if (selectOneKey.value == false) {
-                selectOneMsg.value = "取消选择"
-                showCheckbox.value = true
-                checkOnClickNode.value = true
-                selectOneKey.value = true
-
+//点击项目的回调
+const nodeclick = async (node_: Tree) => {
+        StudyStore.node = node_
+        if (!selectManyKey.value) {
+                StudyStore.setKeyValue(StudyStore.node.label, StudyStore.node.value as string)
         }
         else if (selectOneKey.value == true) {
                 selectOneMsg.value = "选择一个项目"
