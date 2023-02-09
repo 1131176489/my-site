@@ -1,8 +1,10 @@
 <template>
-        <el-form label-position="top" ref="ruleFormRef" status-icon v-bind:model="ruleForm" v-bind:rules="rules">
+        <el-form label-position="top" ref="ruleFormRef" status-icon v-bind:model="ruleForm" v-bind:rules="rules"
+        style="width: 400px;"
+        >
                 <el-form-item label="请输入验证码" prop="code">
                         <el-input placeholder="请输入验证码" type="text" v-model="ruleForm.code"
-                                  :rules="rules" />
+                                  :rules="rules" v-on:keydown.prevent.enter="handleclick(ruleFormRef)" />
                 </el-form-item>
                 <el-form-item>
                         <el-button type="primary" style="width: 100%;" v-on:click="handleclick(ruleFormRef)">
@@ -15,7 +17,7 @@
 import { ElMessage, FormInstance } from 'element-plus'
 import { onMounted, reactive, ref } from "vue"
 import { useRouter, useRoute } from 'vue-router'
-import { registerStore } from "../assets/register"
+import { registerStore } from "../assets/Register"
 import axios from 'axios'
 const ruleFormRef = ref<FormInstance>()
 const router = useRouter()
@@ -92,7 +94,7 @@ function validate(code: string) {
 }
 </script>
 
-<style>
+<style scoped>
 .el-form {
         height: 210px;
         /* width: 90%; */

@@ -24,8 +24,7 @@ import { ElMessage, FormInstance } from 'element-plus'
 import { reactive, ref ,onMounted} from "vue"
 import { validate } from "email-validator"
 import { useRouter } from 'vue-router'
-import { registerStore } from "../assets/register"
-import { Axios } from 'axios'
+import { registerStore } from "../assets/Register"
 import axios from 'axios'
 
 const router = useRouter()
@@ -36,8 +35,8 @@ onMounted(()=>{
         set_step(0)
 })
 const ruleForm = reactive({
-        email: '1131176489@qq.com',
-        password: '123',
+        email: '',
+        password: '',
 })
 const validateEmail = (rule: any, value: any, callback: any) => {
         if (value === '') {
@@ -96,7 +95,7 @@ function submitForm(ruleFormRef: any) {
 }
 
 </script>
-<style >
+<style scoped >
 @media screen and (max-width: 765px) {
         .el-form {
                 width: 90%;

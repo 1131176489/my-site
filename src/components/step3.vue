@@ -9,7 +9,7 @@
 <script lang="ts" setup>
 import { onMounted } from "vue"
 import { useRouter } from "vue-router"
-import { registerStore } from "../assets/register"
+import { registerStore } from "../assets/Register"
 const registerData = registerStore()
 let { set_step } = registerData
 onMounted(()=>{
@@ -24,7 +24,7 @@ const handleclick = () => {
 }
 </script>
 
-<style>
+<style scoped>
 .el-form {
         height: 210px;
 }

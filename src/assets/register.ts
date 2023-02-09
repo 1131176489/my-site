@@ -3,12 +3,25 @@ import { ref } from 'vue'
 
 
 export const registerStore = defineStore('register', () =>{
-        const emailParam = ref("")
+        const email = ref("")
+        const step = ref(2)
         const set_emailParam = (p:string) :void=> {
-                emailParam.value = p
+                email.value = p
+        }
+        const get_emailParam = () => {
+                return email.value 
+        }
+        const set_step = (p:number) :void=> {
+                step.value = p
+        }
+        const get_step = () => {
+                return step.value 
         }
         return {
-                emailParam,
                 set_emailParam,
+                get_emailParam,
+                step,
+                set_step,
+                get_step,
         }
 })
