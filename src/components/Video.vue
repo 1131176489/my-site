@@ -241,6 +241,13 @@ function preVideo() {
 function nextVideo() {
         videoEnd(1)
 }
+const forward = () => {
+        vi.value!.currentTime = vi.value!.currentTime + 3
+}
+const backward = () => {
+        vi.value!.currentTime = vi.value!.currentTime - 3
+}
+
 //生命周期钩子
 onMounted(() => {
         pageBegin()
@@ -290,6 +297,12 @@ window.onresize = reSizeContainer
                                 </el-button>
                                 <el-button v-on:click="nextVideo">
                                         下一个视频
+                                </el-button>
+                                <el-button v-on:click="backward">
+                                        后退两秒
+                                </el-button>
+                                <el-button v-on:click="forward">
+                                        前进两秒
                                 </el-button>
                         </div>
                 </el-card>
