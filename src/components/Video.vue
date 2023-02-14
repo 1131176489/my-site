@@ -80,12 +80,13 @@ function getStatistics(info: string): BodyInit {
 //向服务器发送当前视频进度数据包的函数
 function lastVideo(info: string): void {
         // 
-        fetch(videoData.srcBaseUrl + 'lastVideo', {
+        fetch(videoData.srcBaseUrl + 'api/lastVideo', {
                 method: 'POST',
                 body: getStatistics(info),
                 keepalive: true,
                 headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': "Bearer " + localStorage.getItem("token"),
                 }
         })
 }
@@ -100,8 +101,7 @@ const pageBegin = async function () {
         //获取视频列表数据
         await ff()
         //获取视频播放信息数据包
-        const { data }: { data: lastVideo } = await axios.get("/lastVideo")
-        console.log(data)
+        const { data }: { data: lastVideo } = await axios.get("/api/lastVideo")
         videoData.playInfo = data.msg
         //将当前高亮设置为播放信息数据包的标签
         videoData.currentHeightLight = videoData.playInfo.label
@@ -123,7 +123,7 @@ const pageBegin = async function () {
         reSizeContainer()
 }
 //点击视频标题节点的回调函数
-function handleClick(f1: Tree, f2: any, f3: any, f4: any): void {
+async function handleClick(f1: Tree, f2: any, f3: any, f4: any): Promise<void> {
         //获取currentHeightLight类名的元素
         const d = window.document.documentElement.getElementsByClassName('currentHeightLight')
         if (d.length != 0) {
@@ -145,6 +145,18 @@ function handleClick(f1: Tree, f2: any, f3: any, f4: any): void {
                 setCurrentPlayList(f2.parent.label, f1.label)
                 //设置当前视频文件父文件夹名称
                 videoData.currentVideoParent = f2.parent.label as string
+                const { data: res } = await axios.post("/api/getvideotime", {
+                        data: {
+                                label: f1.label
+                        }
+                })
+                if (res != "nodata") {
+                        setTimeout(() => {
+                                vi.value!.currentTime = res.time
+                        }, 1000)
+                }
+
+
         }
         //点击文件夹标题
         else {
@@ -280,7 +292,9 @@ window.onresize = reSizeContainer
                                ref="vi"></video>
                 </div>
                 <el-scrollbar>
-                        <el-tree :data="videoData.mydata" v-bind:render-after-expand=true
+                        <el-tree
+                                 v-bind:data="videoData.mydata"
+                                 v-bind:render-after-expand=true
                                  v-bind:props="defaultProps"
                                  v-on:node-click="handleClick" ref="treeRef" />
                 </el-scrollbar>
@@ -315,11 +329,13 @@ window.onresize = reSizeContainer
         .currentHeightLight {
                 background-color: #337ecc !important;
         }
+
         .container {
                 display: flex;
                 height: 100%;
                 justify-content: left;
         }
+
         video {
                 display: block;
                 width: 1044px;
@@ -328,17 +344,20 @@ window.onresize = reSizeContainer
                 padding: 0;
                 background-color: #000;
         }
+
         .video-container {
                 width: 1044px;
-                margin-left: 150px;
+                margin-left: 20px;
                 flex-shrink: 0;
         }
+
         .video-title {
                 height: 60px;
                 padding-top: 20px;
                 font-size: 16px;
                 font-family: 'Times New Roman', Times, serif;
         }
+
         .video-list {
                 flex-shrink: 0;
                 overflow: scroll;
@@ -420,6 +439,7 @@ window.onresize = reSizeContainer
 
         .btn-1 {
                 display: flex;
+                flex-direction: column;
         }
 
         .btn button {
@@ -427,6 +447,9 @@ window.onresize = reSizeContainer
                 padding: 0 !important;
                 width: 100%;
                 border-bottom: 0;
+        }
+        .el-scrollbar{
+                height: 200px;
         }
 }
 </style>
