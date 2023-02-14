@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive, ref } from 'vue';
+import { computed, onBeforeMount, onMounted, onUnmounted, onUpdated, reactive, ref } from 'vue';
 import { useStudyStore } from '../assets/Study'
 import { ElMessage, ElMessageBox, ElTree } from 'element-plus'
 import type { UploadInstance, UploadProps, UploadRawFile, ElAside } from 'element-plus'
 import type { Tree, Info } from "../assets/Study"
+import { globalStore } from "../assets/Global"
 import axios from 'axios'
 import type Node from 'element-plus/es/components/tree/src/model/node'
 import 'element-plus/theme-chalk/display.css'
@@ -13,7 +14,7 @@ const upload = ref<UploadInstance>()
 //树状组件
 const isexpand = ref(false)
 const showCheckbox = ref(false)
-const defaultEexpandAll = ref(true)
+const defaultEexpandAll = ref(false)
 const checkStrictly = ref(true)
 const checkOnClickNode = ref(false)
 const selectManyKey = ref(false)
@@ -27,46 +28,120 @@ const actionUrl = ref("http://192.168.0.106:9000/api/pic")
 const auth = reactive({ Authorization: "Bearer " + localStorage.getItem("token") })
 const StudyStore = useStudyStore()
 const show = ref(true)
-const filename :string[]= reactive([])
+const filename: string[] = reactive([])
+const vrow = computed(() => {
+        return document.getElementsByTagName("html")[0].clientWidth >500? 5:3
+})
 //其他
-const havePic = ref(true)
+const value1 = ref(true)//是否显示解答
+const globalStoreData = globalStore()
+const imgShow = computed(() => {
+        return StudyStore.node && StudyStore.node!.pic && StudyStore.node!.pic.length != 0 && show
+})
 const elAsideStyle = ref({
         border: "1px solid #d9ecff",
-        width: "200px"
+        width: "12.5rem"
 })
 const formAside = ref({
-        // width: "100%",
-        // border: "1px solid #d9ecff",
         "flex-grow": "1"
 })
 const scrollbarMain = ref({
-        width: "200px"
+        width: "12.5rem"
 })
 onMounted(() => {
         getData()
+        axios.get("/api/userinfo", {}).then((res) => {
+                globalStoreData.userinfo = res.data.userinfo
+                if (globalStoreData.userinfo.Study_value1 != undefined) {
+                        value1.value = globalStoreData.userinfo.Study_value1
+                }
+                if (globalStoreData.userinfo.Study_defaultEexpandAll != undefined) {
+                        defaultEexpandAll.value = globalStoreData.userinfo.Study_defaultEexpandAll
+                }
+                console.log(defaultEexpandAll.value)
+                setTimeout(defaultEexpandAllHandle, 500)
+        }).catch((err) => {
+                ElMessage({ "type": "error", message: "获取数据失败" + "错误信息：" + err.message })
+        })
 })
-const reSizeCommonLayout = (): void => {
-        let offsetHeight_ = (window.document.documentElement as HTMLElement).offsetHeight
-        let headerHeight = (window.document.documentElement.getElementsByClassName("header")[0] as HTMLElement).scrollHeight
-        let container = <HTMLElement>window.document.documentElement.getElementsByClassName("common-layout")[0]
-        container.style.height = offsetHeight_ - headerHeight + "px"
+// onUpdated(() => {
+//         defaultEexpandAllHandle()
+// })
+const sendUserInfo = () => {
+        axios.post("/api/userinfo", {
+                userinfo: globalStoreData.userinfo
+        })
 }
 const ondrag = (e: DragEvent) => {
         elAsideStyle.value.width = e.x - 27 + "px"
 }
-window.onresize = reSizeCommonLayout
+const tm = (e: TouchEvent) => {
+        console.log("666")
+}
+const ts = (e: TouchEvent) => {
+        alert(666)
+}
+// window.onresize = reSizeCommonLayout
 const getData = async () => {
         const { data: res }: { data: { msg: string, status: number, info: Info } } = await axios.get("/api/studylist")
         StudyStore.info = res.info
+}
+//点击解答与否的回调
+const elSwitchChange = () => {
+        console.log(value1.value)
+        if (value1.value) {
+                if (StudyStore.node == null) {
+                        StudyStore.setKeyValue("", "")
+                }
+                else {
+                        StudyStore.setKeyValue(StudyStore.node.label, StudyStore.node.value)
+                }
+        }
+        else {
+                if (StudyStore.node == null) {
+                        StudyStore.setKeyValue("", "")
+                } else {
+                        StudyStore.setKeyValue(StudyStore.node.label, "不显示解答")
+                }
+        }
+        globalStoreData.userinfo.Study_value1 = value1.value
+        sendUserInfo()
+}
+const defaultEexpandAllHandle = () => {
+        console.log("qq:", defaultEexpandAll.value)
+        const childrenNode = treeRef.value?.store.nodesMap
+        if (defaultEexpandAll.value) {
+                console.log(666)
+                for (let i in childrenNode) {
+                        childrenNode[i].expanded = true
+                        console.log(childrenNode[i].expanded)
+                }
+        }
+        else {
+                console.log(777)
+                for (let i in childrenNode) {
+                        childrenNode[i].expanded = false
+                }
+        }
+        // console.log(childrenNode)
+        globalStoreData.userinfo.Study_defaultEexpandAll = defaultEexpandAll.value
+        sendUserInfo()
 }
 //点击项目的回调
 const nodeclick = async (node_: Tree) => {
         StudyStore.node = node_
         if (!selectManyKey.value) {
-                StudyStore.setKeyValue(StudyStore.node.label, StudyStore.node.value as string)
+                if (value1.value) {
+                        StudyStore.setKeyValue(StudyStore.node.label, StudyStore.node.value as string)
+
+                }
+                else {
+                        StudyStore.setKeyValue(StudyStore.node.label, "不显示解答")
+
+                }
         }
         else if (selectManyKey.value) {
-                StudyStore.checkNode = treeRef.value?.getCheckedKeys()  as number[]
+                StudyStore.checkNode = treeRef.value?.getCheckedKeys() as number[]
         }
         appendChildrenKey.value = false
 }
@@ -82,6 +157,13 @@ const updateOne = async () => {
         else if (StudyStore.key == "") {
                 ElMessage({
                         message: '描述不能为空',
+                        type: 'warning',
+                })
+                return
+        }
+        else if (value1.value == false) {
+                ElMessage({
+                        message: '请先把按钮调整到显示解答',
                         type: 'warning',
                 })
                 return
@@ -211,10 +293,9 @@ const appendPic = () => {
 const imageError = () => {
         show.value = false
         setTimeout(() => {
-                
                 show.value = true
                 console.log(999)
-       },1000)
+        }, 1000)
 }
 const handlePicSuccess: UploadProps['onSuccess'] = (response, uploadFile, uploadFiles) => {
         imageUrl.value = URL.createObjectURL(uploadFile.raw!)
@@ -318,14 +399,14 @@ const removeMany = async () => {
                         }
                         catch (err) {
                                 ElMessage({
-                                        message: '删除失败！失败原因：'+(err as Error).message,
+                                        message: '删除失败！失败原因：' + (err as Error).message,
                                         type: 'error',
                                 })
                         }
                 }
                 catch (err) {
                         ElMessage({
-                                message: '删除失败！失败原因：'+(err as Error).message,
+                                message: '删除失败！失败原因：' + (err as Error).message,
                                 type: 'error',
                         })
                 }
@@ -345,7 +426,7 @@ const append1 = async () => {
                 label: StudyStore.key,
                 id: StudyStore.info.insertId++,
                 children: [],
-                value:""
+                value: ""
         })
         try {
                 const r = await axios.post("/api/studyUpdate", {
@@ -383,7 +464,6 @@ const append1 = async () => {
                                                          v-bind:data="StudyStore.info.data"
                                                          v-bind:show-checkbox="showCheckbox"
                                                          v-on:node-click="nodeclick"
-                
                                                          v-on:current-change=""
                                                          node-key="id"
                                                          highlight-current
@@ -397,17 +477,17 @@ const append1 = async () => {
                                         </div>
                                 </el-scrollbar>
                         </el-aside>
-                        <div class="drag" draggable="true" v-on:drag="ondrag">
+                        <div class="drag" draggable="true" v-on:drag="ondrag" v-on:touchmove="tm" v-on:touchstart="ts">
                                 |||
                         </div>
-                        <el-main style="border: 1px solid #d9ecff;">
-                                <div class="common-layout">
-                                        <el-container> 
-                                                <el-aside v-bind:style="formAside">
-                                                        <el-form label-position="top">
-                                                                <el-form-item>
-                                                                        
-
+                        <el-scrollbar style="width: 100%;height:100%" v-bind:height="'100%'"
+                                      v-bind:view-style="{ height: '100%' }">
+                                <el-main style="border: 1px solid #d9ecff;">
+                                        <div class="common-layout">
+                                                <el-container>
+                                                        <el-aside v-bind:style="formAside">
+                                                                <el-form label-position="top">
+                                                                        <el-form-item>
                                                                                 <el-button
                                                                                            type="warning"
                                                                                            plain
@@ -432,7 +512,7 @@ const append1 = async () => {
                                                                                 <el-button
                                                                                            type="primary"
                                                                                            plain
-                                                                                           v-bind:disabled="!appendChildrenKey||selectManyKey"
+                                                                                           v-bind:disabled="!appendChildrenKey || selectManyKey"
                                                                                            v-on:click="appendChildrenConfirm">
                                                                                         {{ "确认添加"}}
                                                                                 </el-button>
@@ -442,91 +522,110 @@ const append1 = async () => {
                                                                                            v-on:click="append1">
                                                                                         {{ "添加一个分类" }}
                                                                                 </el-button>
-                                                                       
-                                                                </el-form-item>
-                                                                <el-form-item>
-                                                                        <el-upload
-                                                                                   v-bind:auto-upload="true"
-                                                                                   v-bind:action="actionUrl"
-                                                                                   v-bind:show-file-list="true"
-                                                                                   v-bind:on-success="handlePicSuccess"
-                                                                                   v-bind:before-upload="beforePicUpload"
-                                                                                   v-bind:headers="auth"
-                                                                                   v-bind:data="uploadData"
-                                                                                   v-bind:disabled="uploadDisabled"
-                                                                                   name="pic"
-                                                                                   ref="upload"
-                                                                                   multiple>
-                                                                                <template #trigger>
-                                                                                        <el-button
-                                                                                                   plain
-                                                                                                   v-bind:disabled="appendChildrenKey||selectManyKey"
-                                                                                                   v-on:click="appendPic"
-                                                                                                   type="primary">
-                                                                                                {{ "添加图片"}}
-                                                                                        </el-button>
-                                                                                </template>
-                                                                        </el-upload>
-                                                                </el-form-item>
-                                                                <el-form-item>
+
+                                                                        </el-form-item>
+                                                                        <el-form-item>
+                                                                                <el-upload
+                                                                                           v-bind:auto-upload="true"
+                                                                                           v-bind:action="actionUrl"
+                                                                                           v-bind:show-file-list="true"
+                                                                                           v-bind:on-success="handlePicSuccess"
+                                                                                           v-bind:before-upload="beforePicUpload"
+                                                                                           v-bind:headers="auth"
+                                                                                           v-bind:data="uploadData"
+                                                                                           v-bind:disabled="uploadDisabled"
+                                                                                           name="pic"
+                                                                                           ref="upload"
+                                                                                           multiple>
+                                                                                        <template #trigger>
+                                                                                                <el-button
+                                                                                                           plain
+                                                                                                           v-bind:disabled="appendChildrenKey || selectManyKey"
+                                                                                                           v-on:click="appendPic"
+                                                                                                           type="primary">
+                                                                                                        {{ "添加图片"}}
+                                                                                                </el-button>
+                                                                                        </template>
+                                                                                        <el-switch
+                                                                                                   v-on:change="elSwitchChange"
+                                                                                                   v-model="value1"
+                                                                                                   style="margin-left: 10px;"
+                                                                                                   active-text="显示解答"
+                                                                                                   inactive-text="不显示解答" />
+                                                                                        <el-switch
+                                                                                                   v-on:change="defaultEexpandAllHandle"
+                                                                                                   v-model="defaultEexpandAll"
+                                                                                                   style="margin-left: 10px;"
+                                                                                                   active-text="全部展开"
+                                                                                                   inactive-text="全部收起" />
+                                                                                </el-upload>
+                                                                        </el-form-item>
+                                                                        <el-form-item>
                                                                                 <el-button type="primary"
                                                                                            plain
-                                                                                          v-bind:disabled="!selectManyKey"
+                                                                                           v-bind:disabled="!selectManyKey"
                                                                                            v-on:click="removeMany">
                                                                                         {{ "批量删除" }}
                                                                                 </el-button>
-                                                                                
+
                                                                                 <el-button type="primary"
                                                                                            plain
-                                                                                          
+
                                                                                            v-on:click="selectMany">
                                                                                         {{ selectManyMsg }}
                                                                                 </el-button>
-                                                                                
-                                                                </el-form-item>
+                                                                        </el-form-item>
 
-                                                                <el-form-item label="描述">
-                                                                        <el-input v-model="StudyStore.key"
-                                                                                  v-bind:rows="10"
-                                                                                  type="textarea"
-                                                                                  placeholder="请输入描述"
-                                                                                  v-bind:autosize="{ minRows: 3, maxRows: 6 }" />
-                                                                </el-form-item>
-                                                                <el-form-item label="解答">
-                                                                        <el-input v-model="StudyStore.value"
-                                                                                  v-bind:rows="10" type="textarea"
-                                                                                  placeholder="请输入解答" />
-                                                                </el-form-item>
-                                                        </el-form>
-                                                </el-aside>
-                                                <el-main v-if="StudyStore.node && StudyStore.node!.pic&&StudyStore.node!.pic.length!=0&&show"
-                                                         v-bind:style="scrollbarMain">
-                                                        <el-scrollbar style="padding: 20px;border: 1px solid  #d9ecff;">
-                                                                <div v-for="( item, index ) in StudyStore.node!.pic" style="position: relative;">
-                                                                        <el-image
-                                                                                
-                                                                                  v-bind:key="index"
-                                                                                  fit='scale-down'
-                                                                                  v-bind:src="'http://192.168.0.106:9000/'+item.src" />
-                                                                        <div title="点击删除" style="cursor: pointer;" v-on:click="delPic(item.src,)">
-                                                                                 <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" data-v-029747aa=""
-                                                                                style="position: absolute;top: 0px;right: 0px;width: 20px;height: 20px;z-index:5 ;" >
-                                                                                        <path fill="currentColor"
-                                                                                        d="m466.752 512-90.496-90.496a32 32 0 0 1 45.248-45.248L512 466.752l90.496-90.496a32 32 0 1 1 45.248 45.248L557.248 512l90.496 90.496a32 32 0 1 1-45.248 45.248L512 557.248l-90.496 90.496a32 32 0 0 1-45.248-45.248L466.752 512z">
-                                                                        
-                                                                                        </path>
-                                                                                        <path fill="currentColor"
-                                                                                        d="M512 896a384 384 0 1 0 0-768 384 384 0 0 0 0 768zm0 64a448 448 0 1 1 0-896 448 448 0 0 1 0 896z">
-                                                                                        </path>
-                                                                                </svg>
+                                                                        <el-form-item label="描述">
+                                                                                <el-input v-model="StudyStore.key"
+                                                                                          v-bind:rows="2"
+                                                                                          type="textarea"
+                                                                                          placeholder="请输入描述" />
+                                                                        </el-form-item>
+                                                                        <el-form-item label="解答">
+                                                                                <el-input v-model='StudyStore.value'
+                                                                                          v-bind:rows="vrow"
+                                                                                          type="textarea"
+                                                                                          placeholder="请输入解答" />
+                                                                        </el-form-item>
+                                                                </el-form>
+                                                        </el-aside>
+                                                        <el-main v-if="imgShow"
+                                                                 v-bind:style="scrollbarMain" class="img">
+                                                                <el-scrollbar
+                                                                              style="padding: 20px;border: 1px solid  #d9ecff;">
+                                                                        <div v-for="( item, index ) in StudyStore.node!.pic"
+                                                                             style="position: relative;">
+                                                                                <el-image
+
+                                                                                          v-bind:key="index"
+                                                                                          fit='scale-down'
+                                                                                          v-bind:src="'http://192.168.0.106:9000/' + item.src" />
+                                                                                <div title="点击删除"
+                                                                                     style="cursor: pointer;"
+                                                                                     v-on:click="delPic(item.src,)">
+                                                                                        <svg viewBox="0 0 1024 1024"
+                                                                                             xmlns="http://www.w3.org/2000/svg"
+                                                                                             data-v-029747aa=""
+                                                                                             style="position: absolute;top: 0px;right: 0px;width: 20px;height: 20px;z-index:5 ;">
+                                                                                                <path fill="currentColor"
+                                                                                                      d="m466.752 512-90.496-90.496a32 32 0 0 1 45.248-45.248L512 466.752l90.496-90.496a32 32 0 1 1 45.248 45.248L557.248 512l90.496 90.496a32 32 0 1 1-45.248 45.248L512 557.248l-90.496 90.496a32 32 0 0 1-45.248-45.248L466.752 512z">
+
+                                                                                                </path>
+                                                                                                <path fill="currentColor"
+                                                                                                      d="M512 896a384 384 0 1 0 0-768 384 384 0 0 0 0 768zm0 64a448 448 0 1 1 0-896 448 448 0 0 1 0 896z">
+                                                                                                </path>
+                                                                                        </svg>
+                                                                                </div>
+
                                                                         </div>
-                                                                        
-                                                                </div>
-                                                        </el-scrollbar></el-main>
-                                        </el-container>
-                                </div>
+                                                                </el-scrollbar></el-main>
+                                                </el-container>
+                                        </div>
 
-                        </el-main>
+                                </el-main>
+                        </el-scrollbar>
+
                 </el-container>
         </div>
 </template> 
@@ -536,7 +635,9 @@ const append1 = async () => {
         height: 100%;
 }
 
-.el-main {}
+.el-main {
+        height: 100%;
+}
 
 .custom-tree-node {
         flex: 1;
@@ -574,13 +675,36 @@ const append1 = async () => {
 }
 
 
-
 @media screen and (max-width:764px) {
-        .el-aside {
-                width: 200px;
+        .el-container {
+                flex-direction: column;
+
         }
 
+        .common-layout,
+        .el-container {
+                height:auto
+        }
 
+        .el-tree {
+                font-size: 16px;
+        }
+
+        .el-aside {
+                width: 100% !important;
+        }
+
+        .drag {
+                display: none;
+        }
+
+        .img {
+                width: 100% !important;
+        }
+
+        .el-textarea {
+                font-size: 16px;
+        }
 }
 
 /* @media screen and (max-width:764px) {

@@ -3,13 +3,13 @@ import { myStore } from '../assets/Video'
 import { onBeforeUnmount, ref } from 'vue'
 import { onMounted } from "vue"
 import axios from 'axios'
-import { reSizeContainer } from '../assets/reSizeContainer'
-import { ElTree, ElMessage } from 'element-plus'
+import { ElTree, ElMessage, ElMessageBox } from 'element-plus'
 const treeRef = ref<InstanceType<typeof ElTree>>()
 //从pin2.ts引入数据
 const videoData = myStore()
 const vi = ref<HTMLVideoElement | null>(null)
 const timer = ref(0)
+const controls = ref(false)
 const defaultProps = {
         children: 'children',
         label: 'label',
@@ -30,6 +30,11 @@ interface Tree {
 type Data = {
         status: number,
         msg: Array<Tree>,
+}
+const bodystyle: any = {
+        display: "flex",
+        flexDirection: "column",
+        "flex-wrap":"wrap"
 }
 //视频列表数据请求
 async function ff(): Promise<void> {
@@ -120,7 +125,6 @@ const pageBegin = async function () {
                 vi.value?.play()
         }, 1500)
         //设置Container容器高度
-        reSizeContainer()
 }
 //点击视频标题节点的回调函数
 async function handleClick(f1: Tree, f2: any, f3: any, f4: any): Promise<void> {
@@ -241,8 +245,25 @@ async function playListAdd() {
 }
 //清除播放列表
 async function playListClear() {
-        const res = await axios.post('/palyListClear')
-        ff()
+        ElMessageBox.confirm(
+                '确定要清空吗',
+                '警告',
+                {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning',
+                })
+                .then(async () => {
+                        const res = await axios.post('/palyListClear')
+                        ff()
+                        ElMessage({
+                                type: 'success',
+                                message: '清除成功',
+                        })
+                })
+                .catch(() => {
+                })
+
 }
 //按键上一个视频的回调
 function preVideo() {
@@ -259,7 +280,18 @@ const forward = () => {
 const backward = () => {
         vi.value!.currentTime = vi.value!.currentTime - 3
 }
-
+const play = () => {
+        vi.value?.play()
+}
+const pause = () => {
+        vi.value?.pause()
+}
+const showControls = () => {
+        controls.value = true
+}
+const hideControls = () => {
+        controls.value = false
+}
 //生命周期钩子
 onMounted(() => {
         pageBegin()
@@ -278,56 +310,94 @@ window.onbeforeunload = () => {
 window.onpagehide = () => {
         lastVideo('onpagehide')
 }
-window.onresize = reSizeContainer
 </script>
 
 <template>
-        <div class="container">
-                <div class="video-container">
-                        <div class="video-title">
-                                {{ videoData.currentVideo }}
-                        </div>
-                        <video v-bind:src=videoData.src v-on:ended="videoEnd(1)" v-on:pause="lastVideo('pause')"
-                               controls autoplay
-                               ref="vi"></video>
-                </div>
-                <el-scrollbar>
-                        <el-tree
-                                 v-bind:data="videoData.mydata"
-                                 v-bind:render-after-expand=true
-                                 v-bind:props="defaultProps"
-                                 v-on:node-click="handleClick" ref="treeRef" />
-                </el-scrollbar>
-                <el-card class="box-card">
-                        <el-button v-on:click="playListAdd">
-                                添加至播放列表
-                        </el-button>
-                        <el-button v-on:click="playListClear">
-                                清空播放列表
-                        </el-button>
-                        <div class="btn-1">
-                                <el-button v-on:click="preVideo">
-                                        上一个视频
-                                </el-button>
-                                <el-button v-on:click="nextVideo">
-                                        下一个视频
-                                </el-button>
-                                <el-button v-on:click="backward">
-                                        后退两秒
-                                </el-button>
-                                <el-button v-on:click="forward">
-                                        前进两秒
-                                </el-button>
-                        </div>
-                </el-card>
-                <div>
-                </div>
+        <div class="common-layout">
+                <el-container>
+                        <el-aside>
+                                <el-scrollbar>
+                                        <el-tree
+                                                 v-bind:data="videoData.mydata"
+                                                 v-bind:render-after-expand=true
+                                                 v-bind:props="defaultProps"
+                                                 v-on:node-click="handleClick"
+                                                 ref="treeRef" />
+                                </el-scrollbar>
+                        </el-aside>
+                        <el-main>
+                                <div class="video-container">
+                                        <div class="video-title">
+                                                {{ videoData.currentVideo }}
+                                        </div>
+                                        <video
+                                               v-bind:controls="controls"
+                                               v-bind:src=videoData.src
+                                               v-on:ended="videoEnd(1)"
+                                               v-on:pause="lastVideo('pause')"
+                                               autoplay
+                                               ref="vi"></video>
+                                </div>
+                                <el-card class="box-card" v-bind:body-style="bodystyle">
+                                        <el-button-group>
+                                                <el-button v-on:click="playListAdd" size="default">
+                                                        添加至播放列表
+                                                </el-button>
+                                                <el-button v-on:click="playListClear">
+                                                        清空播放列表
+                                                </el-button>
+                                        </el-button-group>
+                                        <el-button-group>
+                                                <el-button v-on:click="preVideo">
+                                                        上一个视频
+                                                </el-button>
+                                                <el-button v-on:click="nextVideo">
+                                                        下一个视频
+                                                </el-button>
+                                        </el-button-group>
+                                        <el-button-group>
+                                                <el-button v-on:click="backward">
+                                                        后退两秒
+                                                </el-button>
+                                                <el-button v-on:click="forward">
+                                                        前进两秒
+                                                </el-button>
+                                        </el-button-group>
+                                        <el-button-group>
+                                                <el-button v-on:click="play">
+                                                        播放
+                                                </el-button>
+                                                <el-button v-on:click="pause">
+                                                        暂停
+                                                </el-button>
+                                        </el-button-group>
+                                        <el-button-group>
+                                                <el-button v-on:click="showControls">
+                                                        显示进度条
+                                                </el-button>
+                                                <el-button v-on:click="hideControls">
+                                                        隐藏进度条
+                                                </el-button>
+                                        </el-button-group>
+                                </el-card>
+                        </el-main>
+                </el-container>
         </div>
 </template>
 <style scoped >
 @media screen and (min-width:765px) {
         .currentHeightLight {
                 background-color: #337ecc !important;
+        }
+
+        .el-aside,
+        .el-main {
+                border: 1px solid #d9ecff;
+                justify-content: space-around;
+        }
+
+        .el-main {
+                display: flex;
         }
 
         .container {
@@ -337,7 +407,6 @@ window.onresize = reSizeContainer
         }
 
         video {
-                display: block;
                 width: 1044px;
                 height: 587px;
                 margin: 0;
@@ -347,44 +416,35 @@ window.onresize = reSizeContainer
 
         .video-container {
                 width: 1044px;
-                margin-left: 20px;
                 flex-shrink: 0;
+                box-sizing: border-box;
         }
 
         .video-title {
-                height: 60px;
-                padding-top: 20px;
+                box-sizing: border-box;
+                width: 1044px;
+                height: 30px;
                 font-size: 16px;
                 font-family: 'Times New Roman', Times, serif;
+                margin: 0;
+
         }
 
-        .video-list {
-                flex-shrink: 0;
-                overflow: scroll;
+        .el-card {
                 width: 300px;
-                height: 500px;
-                margin-top: 59px;
-                margin-left: 30px;
-        }
-
-        .btn {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                margin-top: 59px;
+                flex-basis: auto;
                 flex-shrink: 0;
-                width: 160px;
+
         }
 
-        .btn-1 {
-                display: flex;
-                flex-direction: column;
-        }
-
-        .el-button,
-        .btn-1 button {
+        .el-button-group {
                 margin: 5px 0;
-                width: 150px;
+                display: flex;
+                justify-content: space-between;
+        }
+
+        .el-button {
+                width: 120px;
         }
 }
 
@@ -399,57 +459,39 @@ window.onresize = reSizeContainer
                 padding-left: 5px;
         }
 
-        .video-container {
-                height: 321px;
-        }
-
         video {
                 height: 295px;
                 width: 100%;
-
-
                 background-color: #000;
         }
 
-        .container {
+        .el-aside {
+                width: 100px;
+                height: 100%;
+        }
+        .el-main{
                 display: flex;
-
-                flex-direction: column;
-                flex: 1 1 auto;
-                /* justify-content: left; */
-
+                flex-direction: column-reverse;
+                justify-content: space-between;
         }
-
-        .container div {
-                flex-shrink: 0;
-        }
-
-        .video-list {
-                overflow: scroll;
-                flex-shrink: 1 !important;
-                width: 100%;
-        }
-
-        .btn {
+        .el-button-group {
+                margin: 5px 0;
                 display: flex;
-
-                box-sizing: border-box;
-                flex-direction: column;
+                justify-content: space-between;
         }
-
-        .btn-1 {
-                display: flex;
-                flex-direction: column;
+        .el-button {
+                width: 80px;
+                overflow: visible;
         }
-
-        .btn button {
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100%;
-                border-bottom: 0;
+        .el-aside,.el-main{
+                border: 1px solid #d9ecff;
         }
-        .el-scrollbar{
-                height: 200px;
+        
+        .video-title {
+                overflow-x: scroll;
+        }
+        video{
+                z-index: -100;
         }
 }
 </style>

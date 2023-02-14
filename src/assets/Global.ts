@@ -3,6 +3,8 @@ import { ref } from 'vue'
 
 export const globalStore = defineStore('global', () =>{
         const isAuthenticated = ref("")
+        const userinfo = ref<any>({
+        })
         const set_isAuthenticated = (p:string)=>{
                 isAuthenticated.value = p
         }
@@ -11,6 +13,7 @@ export const globalStore = defineStore('global', () =>{
       }
         return {
                 set_isAuthenticated,
-                get_isAuthenticated
+                get_isAuthenticated,
+                userinfo,
         }
 })

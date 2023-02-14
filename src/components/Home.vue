@@ -22,14 +22,14 @@
                                                         <span>
                                                                 学习
                                                         </span>
-                                                        </el-menu-item>
-                                                        <el-menu-item index="2">
-                                                                <el-icon>
-                                                                        <VideoCamera />
-                                                                </el-icon>
-                                                                <span>
-                                                                        视频
-                                                                </span>
+                                                </el-menu-item>
+                                                <el-menu-item index="2">
+                                                        <el-icon>
+                                                                <VideoCamera />
+                                                        </el-icon>
+                                                        <span>
+                                                                视频
+                                                        </span>
                                                 </el-menu-item>
                                                 <el-menu-item index="3">
                                                         <el-icon>
@@ -52,13 +52,28 @@ import UserInfo from './UserInfo.vue'
 import Study from './Study.vue'
 import Video from "./Video.vue"
 import Image from './Image.vue'
-import {  ref} from "vue"
+import { onMounted, ref } from "vue"
+import axios from 'axios'
+import { ElMessage } from 'element-plus'
+import { globalStore } from "../assets/Global"
 const key = ref(0)
+const globalStoreData = globalStore()
+onMounted(() => {
+        axios.get("/api/userinfo", {}).then((res) => {
+                globalStoreData.userinfo  = res.data.userinfo
+                if (globalStoreData.userinfo.Home_key != undefined) {
+                        key.value = globalStoreData.userinfo.Home_key
+                }
+        }).catch((err) => {
+                ElMessage({ "type": "error", message: "获取数据失败" + "错误信息：" + err.message })
+        })
+})
+
 const currentComponent = [UserInfo, Study, Video, Image,]
 const handleSelect = (key_: string, keyPath_: string[]) => {
         if (key_ == "0") {
                 key.value = 0
-        }else if (key_ == "1") {
+        } else if (key_ == "1") {
                 key.value = 1
         } else if (key_ == "2") {
                 key.value = 2
@@ -67,6 +82,10 @@ const handleSelect = (key_: string, keyPath_: string[]) => {
         } else if (key_ == "4") {
                 key.value = 4
         }
+        globalStoreData.userinfo.Home_key = parseInt(key_)
+        axios.post("/api/userinfo", {
+                userinfo: globalStoreData.userinfo
+        })
 }
 </script>
 <style scoped>
@@ -74,5 +93,9 @@ const handleSelect = (key_: string, keyPath_: string[]) => {
 .el-container {
         height: 100%;
         width: 100%;
+}
+
+.el-main {
+        position: relative;
 }
 </style>
