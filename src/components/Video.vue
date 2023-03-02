@@ -10,6 +10,9 @@ const videoData = myStore()
 const vi = ref<HTMLVideoElement | null>(null)
 const timer = ref(0)
 const controls = ref(false)
+const playvideo = ref(true)
+const videocontrols = ref(true)
+const loop = ref(false)
 const defaultProps = {
         children: 'children',
         label: 'label',
@@ -34,7 +37,7 @@ type Data = {
 const bodystyle: any = {
         display: "flex",
         flexDirection: "column",
-        "flex-wrap":"wrap"
+        "flex-wrap": "wrap"
 }
 //视频列表数据请求
 async function ff(): Promise<void> {
@@ -98,7 +101,7 @@ function lastVideo(info: string): void {
 //组件挂载后的处理函数
 const pageBegin = async function () {
         if (import.meta.env.MODE == 'development') {
-                videoData.srcBaseUrl = "http://192.168.0.106:9000/"
+                videoData.srcBaseUrl = "http://localhost:9000/"
         }
         else {
                 videoData.srcBaseUrl = "/"
@@ -280,17 +283,21 @@ const forward = () => {
 const backward = () => {
         vi.value!.currentTime = vi.value!.currentTime - 3
 }
-const play = () => {
-        vi.value?.play()
+const playpause = () => {
+        if (playvideo.value) {
+                vi.value?.play()
+        }
+        else {
+                vi.value?.pause()
+        }
 }
-const pause = () => {
-        vi.value?.pause()
-}
-const showControls = () => {
-        controls.value = true
-}
-const hideControls = () => {
-        controls.value = false
+const progress = () => {
+        if (videocontrols.value) {
+                controls.value = true
+        }
+        else {
+                controls.value = false
+        }
 }
 //生命周期钩子
 onMounted(() => {
@@ -331,12 +338,14 @@ window.onpagehide = () => {
                                                 {{ videoData.currentVideo }}
                                         </div>
                                         <video
+                                                v-bind:loop="loop"
                                                v-bind:controls="controls"
                                                v-bind:src=videoData.src
                                                v-on:ended="videoEnd(1)"
                                                v-on:pause="lastVideo('pause')"
                                                autoplay
-                                               ref="vi"></video>
+                                               ref="vi">
+                                        </video>
                                 </div>
                                 <el-card class="box-card" v-bind:body-style="bodystyle">
                                         <el-button-group>
@@ -364,20 +373,26 @@ window.onpagehide = () => {
                                                 </el-button>
                                         </el-button-group>
                                         <el-button-group>
-                                                <el-button v-on:click="play">
-                                                        播放
-                                                </el-button>
-                                                <el-button v-on:click="pause">
-                                                        暂停
-                                                </el-button>
+                                                <el-switch
+                                                           v-model="playvideo"
+                                                           class="mb-2"
+                                                           v-on:change="playpause"
+                                                           active-text="播放"
+                                                           inactive-text="暂停" />
                                         </el-button-group>
                                         <el-button-group>
-                                                <el-button v-on:click="showControls">
-                                                        显示进度条
-                                                </el-button>
-                                                <el-button v-on:click="hideControls">
-                                                        隐藏进度条
-                                                </el-button>
+                                                <el-switch
+                                                           v-model="controls"
+                                                           class="mb-2"
+                                                           active-text="显示控件"
+                                                           inactive-text="不显示控件" />
+                                        </el-button-group>
+                                        <el-button-group>
+                                                <el-switch
+                                                           v-model="loop"
+                                                           class="mb-2"
+                                                           active-text="单曲循环"
+                                                           inactive-text="顺序播放" />
                                         </el-button-group>
                                 </el-card>
                         </el-main>
@@ -469,28 +484,34 @@ window.onpagehide = () => {
                 width: 100px;
                 height: 100%;
         }
-        .el-main{
+
+        .el-main {
                 display: flex;
                 flex-direction: column-reverse;
                 justify-content: space-between;
         }
+
         .el-button-group {
                 margin: 5px 0;
                 display: flex;
                 justify-content: space-between;
         }
+
         .el-button {
                 width: 80px;
                 overflow: visible;
         }
-        .el-aside,.el-main{
+
+        .el-aside,
+        .el-main {
                 border: 1px solid #d9ecff;
         }
-        
+
         .video-title {
                 overflow-x: scroll;
         }
-        video{
+
+        video {
                 z-index: -100;
         }
 }
