@@ -21,6 +21,7 @@ const selectManyKey = ref(false)
 const selectManyMsg = ref("选择多个项目")
 const appendChildrenKey = ref(false)
 //上传文件组件
+const s = ref("http://192.168.0.106:9000/")
 const uploadData = ref({})
 const uploadDisabled = ref(true)
 const imageUrl = ref('')
@@ -30,7 +31,7 @@ const StudyStore = useStudyStore()
 const show = ref(true)
 const filename: string[] = reactive([])
 const vrow = computed(() => {
-        return document.getElementsByTagName("html")[0].clientWidth >500? 5:3
+        return document.getElementsByTagName("html")[0].clientWidth > 500 ? 5 : 3
 })
 //其他
 const value1 = ref(true)//是否显示解答
@@ -48,6 +49,14 @@ const formAside = ref({
 const scrollbarMain = ref({
         width: "12.5rem"
 })
+if (import.meta.env.MODE == 'development') {
+        actionUrl.value = "http://192.168.0.106:9000/api/pic"
+        s.value = "http://192.168.0.106:9000/"
+}
+else {
+        actionUrl.value = "/api/pic"
+        s.value = "/"
+}
 onMounted(() => {
         getData()
         axios.get("/api/userinfo", {}).then((res) => {
@@ -58,7 +67,6 @@ onMounted(() => {
                 if (globalStoreData.userinfo.Study_defaultEexpandAll != undefined) {
                         defaultEexpandAll.value = globalStoreData.userinfo.Study_defaultEexpandAll
                 }
-                console.log(defaultEexpandAll.value)
                 setTimeout(defaultEexpandAllHandle, 500)
         }).catch((err) => {
                 ElMessage({ "type": "error", message: "获取数据失败" + "错误信息：" + err.message })
@@ -507,14 +515,14 @@ const append1 = async () => {
                                                                                            plain
                                                                                            v-bind:disabled="selectManyKey"
                                                                                            v-on:click="appendChildren">
-                                                                                        {{ "添加子项目"}}
+                                                                                        {{ "添加子项目" }}
                                                                                 </el-button>
                                                                                 <el-button
                                                                                            type="primary"
                                                                                            plain
                                                                                            v-bind:disabled="!appendChildrenKey || selectManyKey"
                                                                                            v-on:click="appendChildrenConfirm">
-                                                                                        {{ "确认添加"}}
+                                                                                        {{ "确认添加" }}
                                                                                 </el-button>
                                                                                 <el-button type="primary"
                                                                                            plain
@@ -543,7 +551,7 @@ const append1 = async () => {
                                                                                                            v-bind:disabled="appendChildrenKey || selectManyKey"
                                                                                                            v-on:click="appendPic"
                                                                                                            type="primary">
-                                                                                                        {{ "添加图片"}}
+                                                                                                        {{ "添加图片" }}
                                                                                                 </el-button>
                                                                                         </template>
                                                                                         <el-switch
@@ -600,7 +608,7 @@ const append1 = async () => {
 
                                                                                           v-bind:key="index"
                                                                                           fit='scale-down'
-                                                                                          v-bind:src="'http://192.168.0.106:9000/' + item.src" />
+                                                                                          v-bind:src="s+ item.src" />
                                                                                 <div title="点击删除"
                                                                                      style="cursor: pointer;"
                                                                                      v-on:click="delPic(item.src,)">
@@ -627,7 +635,7 @@ const append1 = async () => {
                         </el-scrollbar>
 
                 </el-container>
-        </div>
+</div>
 </template> 
 <style scoped>
 .common-layout,
@@ -683,7 +691,7 @@ const append1 = async () => {
 
         .common-layout,
         .el-container {
-                height:auto
+                height: auto
         }
 
         .el-tree {

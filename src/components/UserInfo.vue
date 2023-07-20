@@ -1,30 +1,34 @@
 <template>
         <div class="common-layout">
                 <el-container>
-                        <el-aside width="200px"><el-menu
-                                         default-active="2">
-                                        <el-menu-item index="2">
-                                                <el-icon><icon-menu /></el-icon>
-                                                <span>用户信息</span>
-                                        </el-menu-item>
-                                </el-menu></el-aside>
                         <el-main>
                                 <el-button plain v-on:click="logout">登出账号</el-button>
                                 <el-button plain v-on:click="logoff">注销账号</el-button>
+                                <el-divider />
+                                <el-link v-for="(item, index ) in items" type="primary" v-bind:href="item.href"
+                                         target="_blank">{{ item.name }}</el-link>
                         </el-main>
                 </el-container>
         </div>
-
 </template>
-
 <script lang="ts" setup>
-import {
-        Menu as IconMenu,
-} from '@element-plus/icons-vue'
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import router from '../assets/route';
-
+const items = [
+        {
+                name: "vuepress",
+                href: "vuepress"
+        },
+        {
+                name: "有道翻译",
+                href: "https://fanyi.youdao.com/index.html"
+        },
+        {
+                name: "漫画",
+                href: "http://192.168.0.106:9001"
+        },
+]
 const logout = () => {
         localStorage.setItem("token", "")
         router.push({
@@ -52,7 +56,7 @@ const logoff = () => {
                                 type: 'success',
                                 message: '注销成功',
                         })
-                        
+
                 }).catch(() => {
                         ElMessage({
                                 type: 'error',
@@ -65,5 +69,7 @@ const logoff = () => {
 }
 </script>
 <style scoped>
-
+.el-link {
+        margin: 0 5px;
+}
 </style>

@@ -7,23 +7,29 @@ import axios from "axios"
 import * as ElementPlusIconsVue from "@element-plus/icons-vue"
 import rem from "./plugins/rem"
 import reSizeContainer from "./plugins/reSizeContainer"
-import { ElMessage } from "element-plus"
-
+import 'element-plus/theme-chalk/display.css'
 const pinia = createPinia()
 const app = createApp(App)
+app.use(router)
 app.use(rem)
 app.use(pinia)
 app.use(reSizeContainer)
 app.provide("reSizeContainer", reSizeContainer)
 app.config.globalProperties.$rem()
-axios.defaults.baseURL = "http://192.168.0.106:9000"
+if (import.meta.env.MODE == 'development') {
+        axios.defaults.baseURL = "http://192.168.0.106:9000"
+}
+else {
+        axios.defaults.baseURL = ""
+}
+// axios.defaults.baseURL = "http://192.168.0.106:9000"
 axios.defaults.timeout = 6000
 axios.interceptors.response
 
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }
-app.use(router)
+
 
 
 router.beforeEach(async (to, from) => {
@@ -44,21 +50,13 @@ router.beforeEach(async (to, from) => {
                                 'Authorization': "Bearer " + localStorage.getItem("token"),
                         },
                 }).then(() => {
-                        router.push({
-                                name: "Home"
-                        })
                 }).catch(() => {
-                        ElMessage({
-                                type: "warning",
-                                message: "登陆失效，请重新登录"
-                        })
                         localStorage.removeItem("token")
                         router.push({
                                 name: "Login"
                         })
                 })
                 axios.defaults.headers.Authorization = "Bearer " + isAuthenticated
-                // axios.defaults.headers.Authorization = null
         }
     })
 app.mount("#app")  

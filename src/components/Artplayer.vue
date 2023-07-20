@@ -1,18 +1,11 @@
 <template>
-        <div ref="artRef"></div>
+        
 </template>
 <script setup lang="ts">
 import Artplayer from 'artplayer';
 import { ref, onMounted, onBeforeUnmount, nextTick, watchEffect } from 'vue';
 import { myStore } from '../assets/Video'
 const videoData = myStore()
-const emit = defineEmits(['get-instance']);
-const props = defineProps({
-        option: {
-                type: Object,
-                required: true,
-        },
-});
 const instance = ref<Artplayer | null>(null);
 const artRef = ref("artRef");
 watchEffect(() => {
@@ -22,9 +15,8 @@ watchEffect(() => {
 })
 onMounted(() => {
         instance.value = new Artplayer({
-                ...props.option,
                 container: artRef.value,
-                url: 'http://192.168.0.106:9000/Chocolate insomnia.mp4',
+                url: 'http://192.168.0.106:9000/伪恋04动漫_手机乐视视频.mp4',
                 autoSize: false,
                 title: 'Name',
                 hotkey: true,
@@ -80,13 +72,10 @@ onMounted(() => {
                         },
                 ],
         } as any);
-        nextTick(() => {
-                emit('get-instance', instance.value);
-        });
         instance.value.on("video:ended", () => {
 
         })
-        instance.value.on('ready', () => {
+        instance.value.on('ready', async () => {
                 const v = document.querySelector("video")
                 v?.addEventListener("touchstart", (event) => {
                         event.preventDefault()

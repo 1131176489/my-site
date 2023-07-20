@@ -24,6 +24,7 @@ export const myStore = defineStore('myStore', {
 
             playListLabel: '' as string,
             playListLabelList: [] as Tree[],
+            url:"",
         }
     }
 })

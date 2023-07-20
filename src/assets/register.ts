@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 
 export const registerStore = defineStore('register', () =>{
-        const email = ref("")
+        const email = ref("1131176489@qq.com")
         const step = ref(2)
         const set_emailParam = (p:string) :void=> {
                 email.value = p

@@ -2,7 +2,7 @@
         <div>
                 注册成功！
         </div>
-        <el-button type="primary" style="width: 400px;" v-on:click="handleclick">
+        <el-button type="primary" style=" width: 90%;" v-on:click="handleclick">
                 确定
         </el-button>   
 </template>
@@ -17,7 +17,6 @@ onMounted(()=>{
 }) 
 const router = useRouter()
 const handleclick = () => {
-        console.log(123)
         router.push({
                 name:"Login"
         })

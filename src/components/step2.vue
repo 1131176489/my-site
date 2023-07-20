@@ -1,6 +1,5 @@
 <template>
         <el-form label-position="top" ref="ruleFormRef" status-icon v-bind:model="ruleForm" v-bind:rules="rules"
-        style="width: 400px;"
         >
                 <el-form-item label="请输入验证码" prop="code">
                         <el-input placeholder="请输入验证码" type="text" v-model="ruleForm.code"
@@ -97,6 +96,6 @@ function validate(code: string) {
 <style scoped>
 .el-form {
         height: 210px;
-        /* width: 90%; */
+        width: 90%;
 }
 </style>

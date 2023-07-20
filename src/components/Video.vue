@@ -101,7 +101,7 @@ function lastVideo(info: string): void {
 //组件挂载后的处理函数
 const pageBegin = async function () {
         if (import.meta.env.MODE == 'development') {
-                videoData.srcBaseUrl = "http://localhost:9000/"
+                videoData.srcBaseUrl = "http://192.168.0.106:9000/"
         }
         else {
                 videoData.srcBaseUrl = "/"
@@ -244,7 +244,6 @@ async function playListAdd() {
                         })
                 }
         }
-        ff()
 }
 //清除播放列表
 async function playListClear() {
@@ -338,7 +337,7 @@ window.onpagehide = () => {
                                                 {{ videoData.currentVideo }}
                                         </div>
                                         <video
-                                                v-bind:loop="loop"
+                                               v-bind:loop="loop"
                                                v-bind:controls="controls"
                                                v-bind:src=videoData.src
                                                v-on:ended="videoEnd(1)"
