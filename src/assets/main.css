@@ -1,31 +1,51 @@
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
 }
+
 html,
 body,
 #app {
-    font-size: 16px;
-    height: 100%;
-    width: 100%;
-    box-sizing: border-box;
+        font-size: 16px;
+        height: 100%;
+        width: 100%;
+        box-sizing: border-box;
 }
+
 .common-layout,
-.el-container{
+.el-container {
         height: 100%;
 }
+
 .el-tree-node>.el-tree-node__children {
-    overflow: visible !important;
+        overflow: visible !important;
 }
 
 .el-tree-node>.el-collapse-transition-leave-active {
-    overflow: hidden !important;
+        overflow: hidden !important;
 }
 
+
 .el-tree-node>.el-collapse-transition-enter-active {
-    overflow: hidden !important;
+        overflow: hidden !important;
 }
-.currentHeightLight{
-    font-weight:900;
+
+.currentHeightLight {
+        font-weight: 900;
 }
+
+@media only screen and (max-width: 765px) {
+        .el-dialog {
+                width: 85% !important;
+
+        }
+        .el-calendar-day {
+                height: 50px !important;
+        }
+}
+
+:root {
+        --headerHeightMobbie: 59px;
+}
+

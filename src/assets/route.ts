@@ -1,29 +1,22 @@
 import { createRouter, createWebHashHistory } from "vue-router"
-import Image from "../components/Image.vue"
 import Home from "../components/Home.vue"
 import Login from "../components/Login.vue"
-import Video from "../components/Video.vue"
-import Register from "../components/Register.vue"
 import NotFound from "../components/NotFound.vue"
 import NewVideo from "../components/NewVideo.vue"
+import NewVideo2 from "../components/NewVideo2.vue"
+import M3U8 from "../components/M3U8.vue"
 import Study from "../components/Study.vue"
-import step1 from "../components/step1.vue"
-import step2 from "../components/step2.vue"
-import step3 from "../components/step3.vue"
+import Calendar from "../components/Calendar.vue"
+import FLV from "../components/FLV.vue"
 const routes = [
         { path: "/", component: Home, name: "Home" },
-        { path: "/video", component: Video, name: "Video" },
+        { path: "/calendar", component: Calendar, name: "Calendar" },
+        { path: "/flv", component: FLV, name: "FLV" },
         { path: "/study", component: Study, name: "Study" },
         { path: "/login", component: Login, name: "Login" },
         { path: "/newvideo", component: NewVideo, name: "NewVideo" },
-        {
-                path: "/register", component: Register, name: "Register",
-                children: [
-                        { path: "step1", component: step1, name: "step1" },
-                        { path: "step2", component: step2, name: "step2" },
-                        {path:  "step3", component: step3, name: "step3"},
-                ]
-        },
+        { path: "/newvideo2", component: NewVideo2, name: "NewVideo2" },
+        { path: "/m3u8", component: M3U8, name: "M3U8" },
         { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ]
 const router = createRouter({

@@ -1,16 +1,16 @@
 <template>
-        <div class="c">
-                <el-row :gutter="20">
-                        <el-col :span="20" class="videocontainer" :xs="24">
+        <div class="container">
+                <el-row :justify="'space-around'" :align="'top'">
+                        <el-col :span="18" class="videocontainer" :xs="24">
                                 <div ref="artRef" style="aspect-ratio: 16 / 9">
                                 </div>
                         </el-col>
-                        <el-col :span="4" class="list hidden-xs-only">
+                        <el-col :span="5" class="list hidden-xs-only"
+                                style="border-left: 2px gray solid;">
                                 <el-scrollbar>
                                         <el-tree
-                                                 v-bind:data="mydata"
+                                                 v-bind:data="renderdata"
                                                  v-bind:render-after-expand=true
-                                                 v-bind:props="defaultProps"
                                                  v-on:node-click="handleClick" />
                                 </el-scrollbar>
                         </el-col>
@@ -18,9 +18,8 @@
                 <el-row class="hidden-sm-and-up">
                         <el-scrollbar>
                                 <el-tree
-                                         v-bind:data="mydata"
+                                         v-bind:data="renderdata"
                                          v-bind:render-after-expand=true
-                                         v-bind:props="defaultProps"
                                          v-on:node-click="handleClick" />
                         </el-scrollbar>
                 </el-row>
@@ -30,182 +29,60 @@
 <script lang="ts" setup>
 import Artplayer from 'artplayer';
 import axios from 'axios';
+import type { TreeNode } from 'element-plus/es/components/tree-v2/src/types';
 import { ref, onMounted, onBeforeUnmount, nextTick, watchEffect } from 'vue';
-import { myStore } from '../assets/Video'
+import { useVideoStore } from '../assets/Video'
+import Hls from "hls.js"
+import { vi } from 'element-plus/es/locale';
 Artplayer.CONTROL_HIDE_TIME = 2000;
-
-interface Tree {
-        label: string
-        children?: Tree[]
-}
-type Data = {
-        status: number,
-        msg: Array<Tree>,
-}
+let videoData = useVideoStore()
 const instance = ref<Artplayer | null>(null);
 const artRef = ref("artRef");
-const videoData = myStore()
-const mydata = ref()
-const endFlag = ref(true)
-function findPlayList() {
-        for (let index = 0; index < (videoData.mydata[0] as any).children.length; index++) {
-                const element = (videoData.mydata[0] as any).children[index];
-                if (videoData.currentVideo == element.label) {
-
-                        (document.querySelector("#fav") as any).style.color = "#00AEEC"
-                        return
-                }
-        }
-        (document.querySelector("#fav") as any).style.color = "#ffffff"
+const endFlag = ref(1)
+let renderdata = ref()
+let srcBaseUrl = ref("")
+let currentVideoUrl = ref("")
+let email = ref("")
+let n = ref(0)
+interface currentVideoInfo {
+        currentVideoPath: string,
+        currentVideoList: string,
+        currentVideoTime: number,
 }
-
 if (import.meta.env.MODE == 'development') {
-        videoData.srcBaseUrl = "http://192.168.0.106:9000/"
+        srcBaseUrl.value = "http://192.168.0.106:9000/"
 }
 else {
-        videoData.srcBaseUrl = "/"
+        srcBaseUrl.value = "/"
 }
-function preVideo() {
-        // vi.value!.currentTime = 99999999
-        videoEnd(-1)
-}
-//按键下一个视频的回调
-function nextVideo() {
-        videoEnd(1)
-}
-function endVideo() {
-        if (endFlag.value) {
-                nextVideo()
+function playM3u8(video: any, url: string, art: any) {
+        if (Hls.isSupported()) {
+
+                if (art.hls) art.hls.destroy();
+                const hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                art.hls = hls;
+                art.on('destroy', () => hls.destroy());
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
         } else {
-                instance.value?.play()
+                art.notice.show = 'Unsupported playback format: m3u8';
         }
 }
-function videoEnd(info: number) {
-        //如果参数为1，则当前视频文件所在父文件中的位置+1，
-        if (info == 1) videoData.index++
-        //否则，则当前视频文件所在父文件中的位置-1，
-        else videoData.index--
-        //如果当前视频文件所在父文件中的位置大于（当前播放列表的长度-1），则视频文件所在父文件中的位置为0，
-        if (videoData.index > videoData.currentPlayList.children!.length - 1) {
-                videoData.index = 0
-        }
-        //如果当前视频文件所在父文件中的位置小于0，则视频文件所在父文件中的位置为（当前播放列表的长度-1），
-        if (videoData.index < 0) {
-                videoData.index = videoData.currentPlayList.children!.length - 1
-        }
-        //当前视频文件名称 设置为 当前播放列表中 当前视频文件所在父文件中的位置 的元素 的标签
-        videoData.currentVideo = videoData.currentPlayList.children![videoData.index].label
-        //视频源url设置为 基本url + 当前播放列表中 当前视频文件所在父文件中的位置 的元素 的标签
-        instance.value!.url = videoData.srcBaseUrl + videoData.currentPlayList.children![videoData.index].label
-}
-function setCurrentPlayList(parentLabel: string, sonLabel: string) {
-        let f1 = (obj: Tree[]) => {
-                for (let i = 0; i < obj.length; i++) {
-                        if (obj[i].children) {
-                                if (obj[i].label == parentLabel) {
-                                        videoData.currentPlayList = obj[i]
-                                } else {
-                                        f1((obj[i].children as any))
-                                }
-                        }
-                        // if (videoData.mydata[i].label == parentLabel) {
-                        //         videoData.currentPlayList = videoData.mydata[i]
-                        // }
-                }
-        }
-        f1(videoData.mydata)
-        for (let i = 0; i < videoData.currentPlayList.children!.length; i++) {
-                if (videoData.currentPlayList.children![i].label == sonLabel) {
-                        videoData.index = i
-                }
-        }
-}
-function playListAdd() {
-        console.log(videoData.mydata[0])
-        findPlayList()
-}
-const handleClick = (f1: Tree, f2: any, f3: any, f4: any) => {
-        const d = window.document.documentElement.getElementsByClassName('currentHeightLight')
+function initArtPlayer(videoUrl: string, email: string, time: number) {
 
-        if (d.length != 0) {
-                //如果有元素，就清除类名
-                d[0].classList.remove('currentHeightLight')
-        }
-        f4.target.classList.add("currentHeightLight")
-        if (f1.children == undefined) {
-
-                instance.value!.url = videoData.srcBaseUrl + f1.label
-                videoData.currentVideo = f1.label
-                videoData.playListLabelList = []
-                videoData.playListLabel = f1.label
-                videoData.currentVideoParent = f2.parent.label as string
-                setCurrentPlayList(f2.parent.label, f1.label)
-                const body = JSON.stringify({
-                        "label": videoData.currentVideo,
-                        "labelParent": videoData.currentVideoParent,
-                        "artplayer_settings": JSON.parse(localStorage.getItem("artplayer_settings") as any)
-                })
-                fetch(videoData.srcBaseUrl + 'api/lastVideo2', {
-                        method: 'POST',
-                        body: body,
-                        keepalive: true,
-                        headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': "Bearer " + localStorage.getItem("token"),
-                        }
-                })
-        } else {
-                f4.target.classList.add("currentHeightLight")
-                videoData.currentHeightLight = f1.label
-                //设置播放列表
-                videoData.playListLabelList = f1.children
-                videoData.playListLabel = ''
-        }
-
-}
-onMounted(async () => {
-        const { data }: { data: Data } = await axios.get('/videoList')
-        console.log(data)
-        videoData.mydata = data.msg
-        mydata.value = data.msg
-
-        const lastVideo2 = await axios.get(videoData.srcBaseUrl + 'api/lastVideo2')
-        console.log(lastVideo2)
-        let last = lastVideo2.data
-        if (last) {
-                videoData.currentVideoParent = last.labelParent
-                videoData.currentVideo = last.label
-                setCurrentPlayList(last.labelParent, last.label)
-        } else {
-
-        }
-
-        console.log(videoData.currentVideo)
-
-        setInterval(() => {
-                const body = JSON.stringify({
-                        "label": videoData.currentVideo,
-                        "labelParent": videoData.currentVideoParent,
-                        "artplayer_settings": JSON.parse(localStorage.getItem("artplayer_settings") as any)
-                })
-                fetch(videoData.srcBaseUrl + 'api/lastVideo2', {
-                        method: 'POST',
-                        body: body,
-                        keepalive: true,
-                        headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': "Bearer " + localStorage.getItem("token"),
-                        }
-                })
-        }, 1000)
-
-        //将当前视频文件名称设置为播放信息数据包的标签，
-
-        //设置当前播放列表和index
-
+        localStorage.setItem("artplayer_settings", `{"times":{"/${email}${videoData.currentVideoPath}":${time}}}`)
         instance.value = new Artplayer({
                 container: artRef.value,
-                url: videoData.srcBaseUrl + last.label,
+                url: videoUrl,
+                type: 'm3u8',
+                id: `/${email}${videoData.currentVideoPath}`,
+                customType: {
+                        m3u8: playM3u8,
+                },
+                volume: 0.5,
+                isLive: false,
                 autoSize: false,
                 title: 'Name',
                 hotkey: true,
@@ -214,7 +91,6 @@ onMounted(async () => {
                 autoOrientation: true,
                 theme: "#00aeec",
                 autoplay: true,
-                // muted: true,
                 flip: true,
                 playbackRate: true,
                 aspectRatio: true,
@@ -236,7 +112,10 @@ onMounted(async () => {
                                         {
                                                 default: true,
                                                 html: '<span style="">列表循环</span>',
+                                        },
+                                        {
 
+                                                html: '<span style="">播完暂停</span>',
                                         },
                                 ],
                                 onSelect: function (item: { html: any; }, $dom: { innerText: string; }, event: any) {
@@ -244,9 +123,11 @@ onMounted(async () => {
                                         console.info(item, $dom, event);
                                         console.log($dom.innerText)
                                         if ($dom.innerText == "单曲循环") {
-                                                endFlag.value = false
+                                                endFlag.value = 0
                                         } else if ($dom.innerText == "列表循环") {
-                                                endFlag.value = true
+                                                endFlag.value = 1
+                                        } else if ($dom.innerText == "播完暂停") {
+                                                endFlag.value = 2
                                         }
                                         return item.html;
                                 },
@@ -266,7 +147,7 @@ onMounted(async () => {
                                         d="M16 5a1 1 0 00-1 1v4.615a1.431 1.431 0 00-.615-.829L7.21 5.23A1.439 1.439 0 005 6.445v9.11a1.44 1.44 0 002.21 1.215l7.175-4.555a1.436 1.436 0 00.616-.828V16a1 1 0 002 0V6C17 5.448 16.552 5 16 5z">
                                         </path>
                                  </svg>
-                        `,
+                                                       `,
                                 click: () => {
                                         nextVideo()
                                 }
@@ -282,37 +163,37 @@ onMounted(async () => {
                                         d="M16 5a1 1 0 00-1 1v4.615a1.431 1.431 0 00-.615-.829L7.21 5.23A1.439 1.439 0 005 6.445v9.11a1.44 1.44 0 002.21 1.215l7.175-4.555a1.436 1.436 0 00.616-.828V16a1 1 0 002 0V6C17 5.448 16.552 5 16 5z">
                                         </path>
                                         </svg>
-                        `,
+                                                       `,
                                 click: () => {
                                         preVideo()
                                 }
                         },
-                        {
-                                name: 'addPlayList',
-                                index: 10,
-                                position: 'right',
-                                html: `<svg id="fav" style="height:22px;width:22px" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" class="video-fav-icon video-toolbar-item-icon" data-v-912a7b4a=""><path fill-rule="evenodd" clip-rule="evenodd" d="M19.8071 9.26152C18.7438 9.09915 17.7624 8.36846 17.3534 7.39421L15.4723 3.4972C14.8998 2.1982 13.1004 2.1982 12.4461 3.4972L10.6468 7.39421C10.1561 8.36846 9.25639 9.09915 8.19315 9.26152L3.94016 9.91102C2.63155 10.0734 2.05904 11.6972 3.04049 12.6714L6.23023 15.9189C6.96632 16.6496 7.29348 17.705 7.1299 18.7605L6.39381 23.307C6.14844 24.6872 7.62063 25.6614 8.84745 25.0119L12.4461 23.0634C13.4276 22.4951 14.6544 22.4951 15.6359 23.0634L19.2345 25.0119C20.4614 25.6614 21.8518 24.6872 21.6882 23.307L20.8703 18.7605C20.7051 17.705 21.0339 16.6496 21.77 15.9189L24.9597 12.6714C25.9412 11.6972 25.3687 10.0734 24.06 9.91102L19.8071 9.26152Z" fill="currentColor"></path></svg>`,
-                                click: () => {
-                                        axios.post('/palyListAddList', {
-                                                data: {
-                                                        "label": videoData.currentVideo
-                                                }
-                                        }).then(async (res) => {
-                                                if (res.data == "add") {
-                                                        (document.querySelector("#fav") as any).style.color = "#00AEEC"
-                                                } else {
-                                                        (document.querySelector("#fav") as any).style.color = "#ffffff"
-                                                }
-                                                const { data }: { data: Data } = await axios.get('/videoList')
-                                                console.log(data)
-                                                videoData.mydata = data.msg
-                                                mydata.value = data.msg
-                                        })
-                                }
-                        },
+                        // {
+                        //         name: 'addPlayList',
+                        //         index: 10,
+                        //         position: 'right',
+                        //         html: `<svg id="fav" style="height:22px;width:22px" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" class="video-fav-icon video-toolbar-item-icon" data-v-912a7b4a=""><path fill-rule="evenodd" clip-rule="evenodd" d="M19.8071 9.26152C18.7438 9.09915 17.7624 8.36846 17.3534 7.39421L15.4723 3.4972C14.8998 2.1982 13.1004 2.1982 12.4461 3.4972L10.6468 7.39421C10.1561 8.36846 9.25639 9.09915 8.19315 9.26152L3.94016 9.91102C2.63155 10.0734 2.05904 11.6972 3.04049 12.6714L6.23023 15.9189C6.96632 16.6496 7.29348 17.705 7.1299 18.7605L6.39381 23.307C6.14844 24.6872 7.62063 25.6614 8.84745 25.0119L12.4461 23.0634C13.4276 22.4951 14.6544 22.4951 15.6359 23.0634L19.2345 25.0119C20.4614 25.6614 21.8518 24.6872 21.6882 23.307L20.8703 18.7605C20.7051 17.705 21.0339 16.6496 21.77 15.9189L24.9597 12.6714C25.9412 11.6972 25.3687 10.0734 24.06 9.91102L19.8071 9.26152Z" fill="currentColor"></path></svg>`,
+                        //         click: () => {
+                        //                 // axios.post('/palyListAddList', {
+                        //                 //         data: {
+                        //                 //                 "label": videoData.currentVideo
+                        //                 //         }
+                        //                 // }).then(async (res) => {
+                        //                 //         if (res.data == "add") {
+                        //                 //                 (document.querySelector("#fav") as any).style.color = "#00AEEC"
+                        //                 //         } else {
+                        //                 //                 (document.querySelector("#fav") as any).style.color = "#ffffff"
+                        //                 //         }
+                        //                 //         const { data }: { data: Data } = await axios.get('/videoList')
+                        //                 //         console.log(data)
+                        //                 //         videoData.mydata = data.msg
+                        //                 //         mydata.value = data.msg
+                        //                 // })
+                        //         }
+                        // },
 
                 ],
-        } as any)
+        })
         // instance.value.on('mousemove', (event) => {
         //         console.info('mousemove', event);
         //         instance.value.controls.toggle = true
@@ -327,78 +208,218 @@ onMounted(async () => {
                         }
                 }
         });
-        instance.value.on("video:ended", endVideo)
+        instance.value.on("video:ended", () => {
+                if (endFlag.value == 0) {
+                        instance.value?.play()
+                } else if (endFlag.value == 1) {
+                        nextVideo()
+                } else if (endFlag.value == 2) {
+                        
+                }
+        })
         instance.value.on('ready', async () => {
-                findPlayList()
                 const v = document.querySelector("video")
                 v?.addEventListener("touchstart", (event) => {
                         event.preventDefault()
                 })
+                n.value = setInterval(() => {
+                        sendVideoInfo()
+                }, 2000)
         })
         instance.value.on('restart', () => {
-                findPlayList()
-
         });
+
+}
+function sendVideoInfo() {
+        console.log(videoData.currentVideoList)
+        fetch(srcBaseUrl.value + "video/videoInfo", {
+                method: "POST", // or 'PUT'
+                headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                },
+                body: JSON.stringify({
+                        currentVideoInfo: {
+                                currentVideoPath: videoData.currentVideoPath,
+                                currentVideoList: videoData.currentVideoList || "",
+                                currentVideoTime: instance.value?.currentTime,
+                        }
+                }),
+        })
+}
+function preVideo() {
+        let filename = videoData.currentVideoPath.split("/").slice(-1)[0]
+        for (let index = 0; index < renderdata.value.length; index++) {
+                const element = renderdata.value[index];
+                if (element.label == filename) {
+                        let label: string
+                        if (index == 0) {
+                                console.log(renderdata.value[renderdata.value.length - 1])
+                                label = renderdata.value[renderdata.value.length - 1].label
+                        } else {
+                                label = renderdata.value[index - 1].label
+                        }
+                        let temp = videoData.currentVideoPath.split("/")
+                        temp.pop()
+                        axios.get("/video/getInfo").then((res) => {
+                                if (instance.value) {
+                                        instance.value.destroy(false)
+                                        clearInterval(n.value)
+                                }
+                                currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata${temp.join("/") + "/" + label}/playlist.m3u8`)
+                                videoData.currentVideoPath = temp.join("/") + "/" + label
+                                axios.get("/video/videoTime", {
+                                        params: {
+                                                p: videoData.currentVideoPath
+                                        }
+                                }).then((res_time) => {
+                                        initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata${temp.join("/") + "/" + label}/playlist.m3u8`), email.value, res_time.data)
+
+                                })
+                        })
+                }
+        }
+}
+// //按键下一个视频的回调
+function nextVideo() {
+        let filename = videoData.currentVideoPath.split("/").slice(-1)[0]
+        for (let index = 0; index < renderdata.value.length; index++) {
+                const element = renderdata.value[index];
+                if (element.label == filename) {
+                        let label: string
+                        if (index == renderdata.value.length - 1) {
+                                // console.log(renderdata.value[renderdata.value.length - 1])
+                                label = renderdata.value[0].label
+                        } else {
+                                label = renderdata.value[index +1].label
+                        }
+                        let temp = videoData.currentVideoPath.split("/")
+                        temp.pop()
+                        axios.get("/video/getInfo").then((res) => {
+                                if (instance.value) {
+                                        instance.value.destroy(false)
+                                        clearInterval(n.value)
+                                }
+                                currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata${temp.join("/") + "/" + label}/playlist.m3u8`)
+                                videoData.currentVideoPath = temp.join("/") + "/" + label
+                                axios.get("/video/videoTime", {
+                                        params: {
+                                                p: videoData.currentVideoPath
+                                        }
+                                }).then((res_time) => {
+                                        initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata${temp.join("/") + "/" + label}/playlist.m3u8`), email.value, res_time.data)
+
+                                })
+                        })
+                }
+        }
+}
+onMounted(async () => {
+        axios.get("/video/getInfo").then((user_email) => {
+                email.value = user_email.data
+                videoData.currentVideoList = localStorage.getItem("currentVideoList")
+                videoData.currentVideoPath = localStorage.getItem("currentVideoPath") as any
+                if (videoData.currentVideoList && videoData.currentVideoPath) {
+                        console.log(videoData.currentVideoList, videoData.currentVideoPath)
+                        axios.get("/video/VideoData", {
+                                params: {
+                                        p: videoData.currentVideoList
+                                }
+                        }).then((res) => {
+                                let temp = []
+                                for (let index = 0; index < res.data.length; index++) {
+                                        const element = res.data[index] as string;
+                                        temp.push({ label: element.replace(".jpg", "") })
+                                }
+                                // temp.push({ label: "" })
+                                renderdata.value = temp
+                        })
+                        axios.get("/video/videoTime", {
+                                params: {
+                                        p: videoData.currentVideoPath
+                                }
+                        }).then((res_time) => {
+                                initArtPlayer((`${srcBaseUrl.value}${user_email.data}/videodata${videoData.currentVideoPath}/playlist.m3u8`), email.value, res_time.data)
+
+                        })
+                } else {
+                        axios.get(srcBaseUrl.value + "video/videoInfo").then((res) => {
+                                let currentVideoInfo: currentVideoInfo = res.data
+                                videoData.currentVideoList = currentVideoInfo.currentVideoList
+                                videoData.currentVideoPath = currentVideoInfo.currentVideoPath
+                                currentVideoUrl.value = (`${srcBaseUrl.value}${user_email.data}/videodata${videoData.currentVideoPath}/playlist.m3u8`)
+                                axios.get("/video/VideoData", {
+                                        params: {
+                                                p: videoData.currentVideoList
+                                        }
+                                }).then((res) => {
+                                        let temp = []
+                                        for (let index = 0; index < res.data.length; index++) {
+                                                const element = res.data[index] as string;
+                                                temp.push({ label: element.replace(".jpg", "") })
+                                        }
+                                        // temp.push({ label: "" })
+                                        renderdata.value = temp
+                                })
+                                initArtPlayer(currentVideoUrl.value, email.value, currentVideoInfo.currentVideoTime)
+                        })
+                }
+
+
+        })
 })
 onBeforeUnmount(() => {
         if (instance.value) {
                 instance.value.destroy(false);
+                clearInterval(n.value)
         }
-        const artplayer_settings = localStorage.getItem("artplayer_settings")
-});
-const defaultProps = {
-        children: 'children',
-        label: 'label',
-} 
+})
+let handleClick = (f1: any, f2: TreeNode) => {
+        let temp = videoData.currentVideoPath.split("/")
+        temp.pop()
+        axios.get("/video/getInfo").then((res) => {
+                if (instance.value) {
+                        instance.value.destroy(false)
+                        clearInterval(n.value)
+                }
+                currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata${temp.join("/") + "/" + f2.label}/playlist.m3u8`)
+                videoData.currentVideoPath = temp.join("/") + "/" + f2.label
+                axios.get("/video/videoTime", {
+                        params: {
+                                p: videoData.currentVideoPath
+                        }
+                }).then((res_time) => {
+                        initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata${temp.join("/") + "/" + f2.label}/playlist.m3u8`), email.value, res_time.data)
+
+                })
+        })
+}
 </script>
 <style scoped>
 .el-row,
 .el-col {
         padding: 0 !important;
         margin: 0 !important;
+        height: 100%;
 }
 
-.next {
-        width: 22px;
-        height: 22px;
-}
-
-@media screen and (min-width: 768px) {
+@media only screen and (max-width: 765px) {
         .el-row {
-                height: 100%;
+                height: auto;
+
         }
-
-        .el-col {
-                height: 100%;
-        }
-
-        .c {
-                height: 100%;
-        }
-}
-
-
-@media screen and (max-width: 767px) {
-        .videocontainer {
-                width: 100%;
-        }
-
-        .el-scrollbar {
-                width: 100%;
-        }
-
-        #app {
-                display: flex;
-        }
-
-        .c {
-                height: 100%;
+        .container {
                 display: flex;
                 flex-direction: column;
         }
-
         .hidden-sm-and-up {
-                overflow: scroll;
+                overflow: hidden;
         }
+}
+
+.el-row {}
+
+.container {
+        height: 100%;
 }
 </style>

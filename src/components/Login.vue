@@ -5,94 +5,118 @@
                                 <el-link href="/" target="_blank">my-site</el-link>
                         </el-header>
                         <el-main>
-                                <el-row v-bind:justify="'center'">
-                                        <el-col v-bind:span="12" v-bind:xs="20">
-                                                <el-form
-                                                         ref="ruleFormRef"
-                                                         label-position="top"
-                                                         label-width="100px"
-                                                         v-bind:model="formData"
-                                                         v-bind:rules="rules"
-                                                         status-icon>
-                                                        <el-form-item label="电子邮件地址" prop="email">
-                                                                <el-input v-model="formData.email" placeholder="请输入电子邮件" />
-                                                        </el-form-item>
-                                                        <el-form-item label="密码" prop="password">
-                                                                <el-input v-model="formData.password" placeholder="请输入密码"
-                                                                          type="password" />
-                                                        </el-form-item>
-                                                        <el-button type="primary" style="width: 100%;"
-                                                                   v-on:click="login(ruleFormRef)">
-                                                                登录
-                                                        </el-button>
+                                <el-row :justify="'center'">
+                                        <el-col  :sm="{span:8}" :xs="{span:24}">
+                                                <el-card class="box-card">
+                                                        <el-form
+                                                                 v-show="!show_register"
+                                                                 class="login"
+                                                                 ref="ruleFormRef"
+                                                                 label-position="top"
+                                                                 label-width="100px"
+                                                                 v-bind:model="formData"
+                                                                 v-bind:rules="rules"
+                                                                 status-icon>
+                                                                <el-form-item label="电子邮件地址" prop="email">
+                                                                        <el-input v-model="formData.email"
+                                                                                  placeholder="请输入电子邮件" />
+                                                                </el-form-item>
+                                                                <el-form-item label="密码" prop="password">
+                                                                        <el-input v-model="formData.password"
+                                                                                  placeholder="请输入密码"
+                                                                                  type="password" />
+                                                                </el-form-item>
+                                                                <el-button type="primary" style="width: 100%;"
+                                                                           v-on:click="login(ruleFormRef)">
+                                                                        登录
+                                                                </el-button>
+                                                        </el-form>
+                                                        <el-form
+                                                                 v-show="show_register"
+                                                                 :rules="register_rules"
+                                                                 class="register"
+                                                                 ref="registerValidate"
+                                                                 label-position="top"
+                                                                 label-width="100px"
+                                                                 v-bind:model="registerData"
+                                                                 status-icon>
+                                                                <el-form-item label="电子邮件地址" prop="email">
+                                                                        <el-input v-model="registerData.email"
+                                                                                  placeholder="请输入电子邮件" />
+                                                                </el-form-item>
+                                                                <el-form-item label="密码" prop="password">
+                                                                        <el-input v-model="registerData.password"
+                                                                                  type="password"
+                                                                                  placeholder="请输入密码" />
+                                                                </el-form-item>
+                                                                <el-form-item label="确认密码" prop="password_check">
+                                                                        <el-input v-model="registerData.password_check"
+                                                                                  type="password"
+                                                                                  placeholder="请再次输入密码" />
+                                                                </el-form-item>
+                                                                <el-form-item label="验证码">
+                                                                        <el-row :span="24" style="width: 100%;">
+                                                                                <el-col :span="16">
+                                                                                        <el-input v-model="registerData.validate_code"
+                                                                                                  placeholder="请输入验证码" />
+                                                                                </el-col>
+                                                                                <el-col :span="8">
+                                                                                        <el-button type="text"
+                                                                                                   style="margin-left: 10px;"
+                                                                                                   v-on:click="validate_code(registerValidate)">
+                                                                                                获取验证码
+                                                                                        </el-button>
+                                                                                </el-col>
+                                                                        </el-row>
+                                                                </el-form-item>
+                                                                <el-button type="primary" style="width: 100%;"
+                                                                           v-on:click="validate_code_">
+                                                                        确认注册
+                                                                </el-button>
+                                                        </el-form>
+                                                        <el-divider />
+                                                        <el-row :justify="'space-around'">
+                                                                <el-link type="primary" v-on:click="register">{{register_login}}</el-link>
+                                                                <el-link type="primary" v-on:click="">忘记密码</el-link>
+                                                        </el-row>
+                                                </el-card>
+                                        </el-col>
 
-                                                </el-form>
-                                        </el-col>
                                 </el-row>
-                                <el-row v-bind:justify="'center'">
-                                        <el-col v-bind:span="3" v-bind:offset="3" v-bind:xs="6">
-                                                <el-link type="primary" href="/#Register/step1">注册</el-link>
-                                        </el-col>
-                                        <el-col v-bind:span="3" v-bind:offset="3" v-bind:xs="6">
-                                                <el-link type="primary" href="/">忘记密码</el-link>
-                                        </el-col>
-                                </el-row>
+
                         </el-main>
                 </el-container>
-        </div>
-        <div class="container">
-                <el-form
-                         ref="ruleFormRef"
-                         label-position="top"
-                         label-width="100px"
-                         v-bind:model="formData"
-                         v-bind:rules="rules"
-                         style="max-width: 460px"
-                         status-icon>
-                        <el-form-item label="电子邮件地址" prop="email">
-                                <el-input v-model="formData.email" placeholder="请输入电子邮件" />
-                        </el-form-item>
-                        <el-form-item label="密码" prop="password">
-                                <el-input v-model="formData.password" placeholder="请输入密码" type="password" />
-                        </el-form-item>
-                        <el-button type="primary" style="width: 100%;" v-on:click="login(ruleFormRef)">
-                                登录
-                        </el-button>
-                        <div class="other">
-                                <router-link to="/Register/step1">
-                                        注册
-                                </router-link>
-                                <router-link to="/">
-                                        忘记密码
-                                </router-link>
-                        </div>
-                </el-form>
-
         </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from "vue"
-import { registerStore } from "../assets/Register"
+import { ref, reactive } from "vue"
 import { validate } from "email-validator"
 import { ElMessage, FormInstance } from "element-plus"
 import axios from 'axios'
 import router from "../assets/route"
-import { globalStore } from "../assets/global"
-const { set_isAuthenticated, get_isAuthenticated } = globalStore()
-const { get_emailParam } = registerStore()
+import { computed } from "vue"
 const ruleFormRef = ref<FormInstance>()
+const registerValidate = ref<FormInstance>()
+// const register_login = ref("注册")
 const formData = reactive({
-        email: "1131176489@qq.com",
-        password: '123',
+        email: "",
+        password: '',
 })
-onMounted(() => {
-        formData.email = get_emailParam()
+const registerData = ref({
+        email: "",
+        password: "",
+        password_check: "",
+        validate_code: ""
+})
+const show_register = ref(false)
+const register_login  = computed(() => {
+       return show_register.value?"登录":"注册"
 })
 const validateEmail = (rule: any, value: any, callback: any) => {
         if (value === '') {
                 callback(new Error('请输入电子邮件地址'))
-        } else if (!validate(formData.email)) {
+        } else if (!validate(value)) {
                 callback(new Error("电子邮件格式不正确"))
         }
         callback()
@@ -104,11 +128,22 @@ const validatePassword = (rule: any, value: any, callback: any) => {
                 callback()
         }
 }
+const validateCheckPassword = (rule: any, value: any, callback: any) => {
+        if (value != registerData.value.password) {
+                callback(new Error('两次输入密码不一致'))
+        } else {
+                callback()
+        }
+}
 const rules = reactive({
         email: [{ validator: validateEmail, trigger: 'blur' }],
         password: [{ validator: validatePassword, trigger: 'blur' }],
 })
-
+const register_rules = reactive({
+        email: [{ validator: validateEmail, trigger: 'blur' }],
+        password_check: [{ validator: validateCheckPassword, trigger: 'blur' }],
+        password: [{ validator: validatePassword, trigger: 'blur' }],
+})
 const login = (ruleFormRef: any) => {
         ruleFormRef.validate(async (isValid: boolean, invalidFields: any) => {
                 if (isValid) {
@@ -117,7 +152,6 @@ const login = (ruleFormRef: any) => {
                                         email: formData.email,
                                         password: formData.password,
                                 })
-                                console.log(res)
                                 const { data }: { data: { status: number, msg: string, token?: string | undefined } } = res
                                 if (data.status == -1) {
                                         if (data.msg == "pwd error") {
@@ -137,15 +171,10 @@ const login = (ruleFormRef: any) => {
                                                 type: "success",
                                                 message: "登陆成功！"
                                         })
-                                        set_isAuthenticated((data.token as string))
-                                        console.log(get_isAuthenticated())
-                                        localStorage.setItem("token", get_isAuthenticated())
+                                        localStorage.setItem("token", (data.token as string))
                                         router.push({
                                                 name: "Home"
                                         })
-                                        // console.log(data.token)
-
-                                        // console.log( jwt.decode((data.token as string)))
                                 }
                         }
                         catch (err) {
@@ -155,38 +184,89 @@ const login = (ruleFormRef: any) => {
                                 })
                                 console.log(err)
                         }
-
                 }
         })
 }
-
+const register = () => {
+        show_register.value = !show_register.value
+}
+const validate_code = (registerValidate: any) => {
+        registerValidate.validate(async (isValid: boolean, invalidFields: any) => {
+                if (isValid) {
+                        axios.post("/register/step1", {
+                                data: {
+                                        email: registerData.value.email,
+                                        password: registerData.value.password,
+                                }
+                        }).then((res) => {
+                                const { data }: { data: { status: number, msg: string } } = res
+                                if (data.status == 0) {
+                                        ElMessage({
+                                                type: "success",
+                                                message: "验证成功，已向邮箱发送验证码"
+                                        })
+                                } else {
+                                        ElMessage({
+                                                type: "error",
+                                                message: `验证失败，${data.msg}`
+                                        })
+                                }
+                        }).catch((data) => {
+                                ElMessage({
+                                        type: "error",
+                                        message: `未知错误`
+                                })
+                        })
+                }
+        })
+}
+const validate_code_ = () => {
+        axios.post("/register/step2", {
+                data: {
+                        email: registerData.value.email,
+                        code: registerData.value.validate_code
+                }
+        }).then((data: any) => {
+                data = data.data
+                if (data.status == -1) {
+                        if (data.msg == "code expire") {
+                                ElMessage({
+                                        type: "warning",
+                                        message: `验证码已过期，请重新点击注册`
+                                })
+                        }
+                        if (data.msg == "code error") {
+                                ElMessage({
+                                        type: "error",
+                                        message: `验证码错误`
+                                })
+                        }
+                        if (data.msg == "unkonwn error") {
+                                ElMessage({
+                                        type: "error",
+                                        message: `未知错误`
+                                })
+                        }
+                }
+                if (data.status == 0) {
+                        ElMessage({
+                                type: "success",
+                                message: `注册成功！3秒后跳转到登录页面`
+                        })
+                        setTimeout(() => {
+                                location.reload()
+                        }, 3000)
+                }
+        })
+}
 </script>
 
 <style scoped>
-/* .container {
-        height: 100%;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-}
-
-.el-form {
-        width: 90%;
-        height: 200px;
-}
-
-.other {
-        display: flex;
-        justify-content: space-between;
-        width: 90%;
-}
-
-.other a {
-        text-decoration: none;
-        font-size: 16px;
-        font-weight: 500;
-        color: blue;
-} */
-</style>
+.box-card {
+        background-color: #fff;
+        border-radius: 3px;
+        /* position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%); */
+}</style>
