@@ -148,8 +148,8 @@ const items = [
                 href: ":9001/"
         },
         {
-                name: "视频列表",
-                href: "/#/newvideo2"
+                name: "M3U8视频",
+                href: "/#/M3U8Video"
         },
         {
                 name: "m3u8",
@@ -167,6 +167,14 @@ const items = [
                 name: "FLV",
                 href: "/#/flv"
         },
+        {
+                name: "非M3U8视频",
+                href: "/#/NonM3U8Video"
+        },
+        {
+                name: "文件下载",
+                href: "/#/FileDownLoad"
+        }
 ]
 const logout = () => {
         localStorage.setItem("token", "")

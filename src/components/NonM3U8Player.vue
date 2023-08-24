@@ -1,9 +1,11 @@
 <template>
+        
         <div class="container">
                 <el-row :justify="'space-around'" :align="'top'">
                         <el-col :span="18" class="videocontainer" :xs="24">
-                                <div ref="artRef" style="aspect-ratio: 16 / 9">
+                                <div ref="artRef" style="aspect-ratio: 16 / 9" id="videoContainer1">
                                 </div>
+
                         </el-col>
                         <el-col :span="5" class="list hidden-xs-only"
                                 style="border-left: 2px gray solid;">
@@ -56,32 +58,14 @@ if (import.meta.env.MODE == 'development') {
 else {
         srcBaseUrl.value = "/"
 }
-function playM3u8(video: any, url: string, art: any) {
-        if (Hls.isSupported()) {
 
-                if (art.hls) art.hls.destroy();
-                const hls = new Hls();
-                hls.loadSource(url);
-                hls.attachMedia(video);
-                art.hls = hls;
-                art.on('destroy', () => hls.destroy());
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = url;
-        } else {
-                art.notice.show = 'Unsupported playback format: m3u8';
-        }
-}
 function initArtPlayer(videoUrl: string, email: string, time: number) {
 
         localStorage.setItem("artplayer_settings", `{"times":{"/${email}${videoData.currentVideoPath}":${time}}}`)
         instance.value = new Artplayer({
                 container: artRef.value,
                 url: videoUrl,
-                type: 'm3u8',
                 id: `/${email}${videoData.currentVideoPath}`,
-                customType: {
-                        m3u8: playM3u8,
-                },
                 volume: 0.5,
                 isLive: false,
                 autoSize: false,
@@ -100,6 +84,19 @@ function initArtPlayer(videoUrl: string, email: string, time: number) {
                 lock: true,
                 fastForward: true,
                 autoPlayback: true,
+                layers: [
+                        {
+                                name: 'potser',
+                                html: `<span id="videoTitle">${videoData.currentVideoPath}</span>`,
+                                tooltip: 'Potser Tip',
+                                style: {
+                                        position: 'absolute',
+                                        top: '10px',
+                                        left: '10px',
+                                        background:"black",
+                                },
+                        },
+                ],
                 settings: [
                         {
                                 html: '播放设置',
@@ -135,19 +132,7 @@ function initArtPlayer(videoUrl: string, email: string, time: number) {
                         },
                 ],
                 whitelist: [],
-                layers: [
-                        {
-                                name: 'potser',
-                                html: `<span id="videoTitle">${videoData.currentVideoPath}</span>`,
-                                tooltip: 'Potser Tip',
-                                style: {
-                                        position: 'absolute',
-                                        top: '10px',
-                                        left: '10px',
-                                        background: "black",
-                                },
-                        },
-                ],
+
                 controls: [
                         {
                                 name: 'next',
@@ -234,7 +219,7 @@ function initArtPlayer(videoUrl: string, email: string, time: number) {
         })
         instance.value.on('ready', async () => {
                 const v = document.querySelector("video")
-                title.value = document.querySelector("#videoTitle")
+                title.value =document.querySelector("#videoTitle") 
                 v?.addEventListener("touchstart", (event) => {
                         event.preventDefault()
                 })
@@ -278,19 +263,16 @@ function preVideo() {
                         let temp = videoData.currentVideoPath.split("/")
                         temp.pop()
                         axios.get("/video/getInfo").then((res) => {
-                                if (instance.value) {
-                                        instance.value.destroy(false)
-                                        clearInterval(n.value)
-                                }
-                                currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata/M3U8${temp.join("/") + "/" + label}/playlist.m3u8`)
+
+                                currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`)
                                 videoData.currentVideoPath = temp.join("/") + "/" + label
                                 axios.get("/video/videoTime", {
                                         params: {
                                                 p: videoData.currentVideoPath
                                         }
                                 }).then((res_time) => {
+                                        instance.value?.switchUrl((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`))
 
-                                        initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata/M3U8${temp.join("/") + "/" + label}/playlist.m3u8`), email.value, res_time.data)
 
                                 })
                         })
@@ -313,18 +295,16 @@ function nextVideo() {
                         let temp = videoData.currentVideoPath.split("/")
                         temp.pop()
                         axios.get("/video/getInfo").then((res) => {
-                                if (instance.value) {
-                                        instance.value.destroy(false)
-                                        clearInterval(n.value)
-                                }
-                                currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata/M3U8${temp.join("/") + "/" + label}/playlist.m3u8`)
+
+                                currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`)
                                 videoData.currentVideoPath = temp.join("/") + "/" + label
                                 axios.get("/video/videoTime", {
                                         params: {
                                                 p: videoData.currentVideoPath
                                         }
                                 }).then((res_time) => {
-                                        initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata/M3U8${temp.join("/") + "/" + label}/playlist.m3u8`), email.value, res_time.data)
+                                        instance.value?.switchUrl((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`))
+                                        // initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`), email.value, res_time.data)
 
                                 })
                         })
@@ -341,7 +321,7 @@ onMounted(async () => {
                         localStorage.removeItem("currentVideoList")
                         localStorage.removeItem("currentVideoPath")
 
-                        axios.get("/video/VideoDataM3U8", {
+                        axios.get("/video/VideoDataNonM3U8", {
                                 params: {
                                         p: videoData.currentVideoList
                                 }
@@ -359,7 +339,8 @@ onMounted(async () => {
                                         p: videoData.currentVideoPath
                                 }
                         }).then((res_time) => {
-                                initArtPlayer((`${srcBaseUrl.value}${user_email.data}/videodata/M3U8${videoData.currentVideoPath}/playlist.m3u8`), email.value, res_time.data)
+
+                                initArtPlayer((`${srcBaseUrl.value}${user_email.data}/videodata/NonM3U8${videoData.currentVideoPath}.mp4`), email.value, res_time.data)
 
                         })
                 } else {
@@ -367,8 +348,8 @@ onMounted(async () => {
                                 let currentVideoInfo: currentVideoInfo = res.data
                                 videoData.currentVideoList = currentVideoInfo.currentVideoList
                                 videoData.currentVideoPath = currentVideoInfo.currentVideoPath
-                                currentVideoUrl.value = (`${srcBaseUrl.value}${user_email.data}/videodata/M3U8${videoData.currentVideoPath}/playlist.m3u8`)
-                                axios.get("/video/VideoDataM3U8", {
+                                currentVideoUrl.value = (`${srcBaseUrl.value}${user_email.data}/videodata/NonM3U8${videoData.currentVideoPath}.mp4`)
+                                axios.get("/video/VideoDataNonM3U8", {
                                         params: {
                                                 p: videoData.currentVideoList
                                         }
@@ -388,28 +369,20 @@ onMounted(async () => {
 
         })
 })
-onBeforeUnmount(() => {
-        if (instance.value) {
-                instance.value.destroy(false);
-                clearInterval(n.value)
-        }
-})
 let handleClick = (f1: any, f2: TreeNode) => {
         let temp = videoData.currentVideoPath.split("/")
         temp.pop()
         axios.get("/video/getInfo").then((res) => {
-                if (instance.value) {
-                        instance.value.destroy(false)
-                        clearInterval(n.value)
-                }
-                currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata/M3U8${temp.join("/") + "/" + f2.label}/playlist.m3u8`)
+
+                currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + f2.label}.mp4`)
                 videoData.currentVideoPath = temp.join("/") + "/" + f2.label
                 axios.get("/video/videoTime", {
                         params: {
                                 p: videoData.currentVideoPath
                         }
                 }).then((res_time) => {
-                        initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata/M3U8${temp.join("/") + "/" + f2.label}/playlist.m3u8`), email.value, res_time.data)
+                        instance.value?.switchUrl((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + f2.label}.mp4`))
+                        // initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + f2.label}.mp4`), email.value, res_time.data)
                 })
         })
 }

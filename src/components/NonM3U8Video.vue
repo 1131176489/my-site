@@ -135,11 +135,11 @@
                                         <el-scrollbar>
                                                 <el-row>
                                                         <div class="renderdata_container">
-                                                                <div class="renderdata_item" v-for="item in renderdata" alt="">
+                                                                <div class="renderdata_item" v-for="item in renderdata" alt="" v-on:click="linkclick(item)">
                                                                         <el-image
-                                                                                  :src='baseUrl + userEmail + videoData.currentVideoList + "/" + item + ".jpg"'
+                                                                                  :src=getImgSrc(item)
                                                                                   :fit="'scale-down'"
-                                                                                  v-on:click="linkclick(item)">
+                                                                                  >
                                                                         </el-image>
                                                                         <div class="renderdata_item_title" :title="item">
                                                                                 {{ item }}
@@ -166,11 +166,11 @@
                         </el-header>
                         <el-main>
                                 <div class="renderdata_container">
-                                        <div class="renderdata_item" v-for="item in renderdata" alt="">
+                                        <div class="renderdata_item" v-for="item in renderdata" alt="" v-on:click="linkclick(item)">
                                                 <el-image
-                                                          :src='baseUrl + userEmail + videoData.currentVideoList + "/" + item + ".jpg"'
+                                                          :src=getImgSrc(item)
                                                           :fit="'scale-down'"
-                                                          v-on:click="linkclick(item)">
+                                                          >
                                                 </el-image>
                                                 <div class="renderdata_item_title" :title="item">
                                                         {{ item }}
@@ -180,41 +180,6 @@
                         </el-main>
                 </el-container>
         </div>
-        <!-- <el-main>
-                <el-row class="hidden-sm-and-up" style="height: 48px;">
-                        <div v-on:click="drawer = true">
-                                |||
-                        </div>
-                </el-row>
-                <el-row>
-                        <el-col :sm="{ span: 6 }" class="hidden-xs-only">
-                                <el-scrollbar>
-                                        <el-tree
-                                                 v-bind:data="mydata"
-                                                 v-bind:render-after-expand=true
-                                                 v-on:node-click="handleClick" />
-                                </el-scrollbar>
-                        </el-col>
-                        <el-col :sm="{ span: 18 }">
-                                <el-scrollbar>
-                                        <el-row>
-                                                <div class="renderdata_container">
-                                                        <div class="renderdata_item" v-for="item in renderdata" alt="">
-                                                                <el-image
-                                                                          :src='baseUrl + userEmail + current_index + "/" + item + ".jpg"'
-                                                                          :fit="'scale-down'"
-                                                                          v-on:click="linkclick(item)">
-                                                                </el-image>
-                                                                <div class="renderdata_item_title" :title="item">
-                                                                        {{ item }}
-                                                                </div>
-                                                        </div>
-                                                </div>
-                                        </el-row>
-                                </el-scrollbar>
-                        </el-col>
-                </el-row>
-        </el-main> -->
 </template>
 <script lang="ts" setup>
 import axios from 'axios';
@@ -237,8 +202,7 @@ const handleExceed: UploadProps['onExceed'] = (files) => {
         file.uid = genFileId()
         upload.value!.handleStart(file)
 }
-
-
+const imgSrc = ref("")
 const currentDir = ref("/")
 const ruleForm = reactive({
         dirname: '',
@@ -260,13 +224,13 @@ else {
 }
 onMounted(async () => {
 
-        const { data }: { data: Array<Tree> } = await axios.get('/video/VideoIndex')
+        const { data }: { data: Array<Tree> } = await axios.get('/video/VideoIndexNonM3U8')
         mydata.value = data
         axios.get("/video/getInfo").then((res) => {
                 userEmail.value = res.data
         })
         if (videoData.currentVideoList) {
-                axios.get("/video/VideoData", {
+                axios.get("/video/VideoDataNonM3U8", {
                         params: {
                                 p: videoData.currentVideoList
                         }
@@ -280,6 +244,10 @@ onMounted(async () => {
                 })
         }
 })
+let getImgSrc = (item: string) => {
+        
+        return `${baseUrl}${userEmail.value}/videodata/NonM3U8/${videoData.currentVideoList}/${item}.jpg`
+}
 const beforeUpload = (rawFile: UploadRawFile) => {
         uploadData.value = {
                 dest: `D:\\static\\userdata\\${userEmail.value}\\videodata` +currentDir.value,
@@ -311,7 +279,7 @@ const handleClick = (f1: Tree, f2: TreeNode, f3: any, f4: any) => {
                         clicknode = (clicknode.parent as any)
                 }
 
-                axios.get("/video/VideoData", {
+                axios.get("/video/VideoDataNonM3U8", {
                         params: {
                                 p: url_path
                         }
@@ -351,7 +319,7 @@ const linkclick = (itemname: string) => {
         // router.push({
         //         name: "NewVideo",
         // })
-        window.open("/#/newvideo")
+        window.open("/#/NonM3U8Player")
 }
 
 const validateDirname = (rule: any, value: string, callback: any) => {
@@ -387,7 +355,7 @@ const submit = (formEl: FormInstance | undefined) => {
                                         })
                                         dialogVisible.value = false
                                         currentDir.value = "/"
-                                        const { data }: { data: Array<Tree> } = await axios.get('/video/VideoIndex')
+                                        const { data }: { data: Array<Tree> } = await axios.get('/video/VideoIndexNonM3U8')
                                         mydata.value = data
                                         ruleForm.dirname = ""
                                 }
@@ -425,7 +393,7 @@ const comfirmDel = () => {
                                         })
                                         dialogVisibleDel.value = false
                                         currentDir.value = "/"
-                                        const { data }: { data: Array<Tree> } = await axios.get('/video/VideoIndex')
+                                        const { data }: { data: Array<Tree> } = await axios.get('/video/VideoIndexNonM3U8')
                                         mydata.value = data
                                         ruleForm.dirname = ""
                                 } else if (res.data == "notexist") {
