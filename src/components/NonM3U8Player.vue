@@ -1,5 +1,4 @@
 <template>
-        
         <div class="container">
                 <el-row :justify="'space-around'" :align="'top'">
                         <el-col :span="18" class="videocontainer" :xs="24">
@@ -58,14 +57,33 @@ if (import.meta.env.MODE == 'development') {
 else {
         srcBaseUrl.value = "/"
 }
+function playM3u8(video: any, url: string, art: any) {
+        if (Hls.isSupported()) {
 
+                if (art.hls) art.hls.destroy();
+                const hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                art.hls = hls;
+                art.on('destroy', () => hls.destroy());
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+        } else {
+                art.notice.show = 'Unsupported playback format: m3u8';
+        }
+}
 function initArtPlayer(videoUrl: string, email: string, time: number) {
-
+        instance.value?.destroy(false)
+// videoUrl = "http://192.168.0.106:9000/【4K无损】江语晨《最后一页》 ‘想把你抱进身体里面 不敢让你看见 嘴角那颗没落下的泪’ 音乐可视化  动态歌词.mp4"
         localStorage.setItem("artplayer_settings", `{"times":{"/${email}${videoData.currentVideoPath}":${time}}}`)
         instance.value = new Artplayer({
                 container: artRef.value,
                 url: videoUrl,
                 id: `/${email}${videoData.currentVideoPath}`,
+                // type: 'm3u8',
+                customType: {
+                        m3u8: playM3u8,
+                },
                 volume: 0.5,
                 isLive: false,
                 autoSize: false,
@@ -75,7 +93,7 @@ function initArtPlayer(videoUrl: string, email: string, time: number) {
                 fullscreenWeb: true,
                 autoOrientation: true,
                 theme: "#00aeec",
-                autoplay: true,
+                // autoplay: true,
                 flip: true,
                 playbackRate: true,
                 aspectRatio: true,
@@ -87,13 +105,13 @@ function initArtPlayer(videoUrl: string, email: string, time: number) {
                 layers: [
                         {
                                 name: 'potser',
-                                html: `<span id="videoTitle">${videoData.currentVideoPath}</span>`,
+                                html: `<span id="videoTitle">{{videoData.currentVideoPath}}</span>`,
                                 tooltip: 'Potser Tip',
                                 style: {
                                         position: 'absolute',
                                         top: '10px',
                                         left: '10px',
-                                        background:"black",
+                                        background: "black",
                                 },
                         },
                 ],
@@ -166,29 +184,6 @@ function initArtPlayer(videoUrl: string, email: string, time: number) {
                                         preVideo()
                                 }
                         },
-                        // {
-                        //         name: 'addPlayList',
-                        //         index: 10,
-                        //         position: 'right',
-                        //         html: `<svg id="fav" style="height:22px;width:22px" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" class="video-fav-icon video-toolbar-item-icon" data-v-912a7b4a=""><path fill-rule="evenodd" clip-rule="evenodd" d="M19.8071 9.26152C18.7438 9.09915 17.7624 8.36846 17.3534 7.39421L15.4723 3.4972C14.8998 2.1982 13.1004 2.1982 12.4461 3.4972L10.6468 7.39421C10.1561 8.36846 9.25639 9.09915 8.19315 9.26152L3.94016 9.91102C2.63155 10.0734 2.05904 11.6972 3.04049 12.6714L6.23023 15.9189C6.96632 16.6496 7.29348 17.705 7.1299 18.7605L6.39381 23.307C6.14844 24.6872 7.62063 25.6614 8.84745 25.0119L12.4461 23.0634C13.4276 22.4951 14.6544 22.4951 15.6359 23.0634L19.2345 25.0119C20.4614 25.6614 21.8518 24.6872 21.6882 23.307L20.8703 18.7605C20.7051 17.705 21.0339 16.6496 21.77 15.9189L24.9597 12.6714C25.9412 11.6972 25.3687 10.0734 24.06 9.91102L19.8071 9.26152Z" fill="currentColor"></path></svg>`,
-                        //         click: () => {
-                        //                 // axios.post('/palyListAddList', {
-                        //                 //         data: {
-                        //                 //                 "label": videoData.currentVideo
-                        //                 //         }
-                        //                 // }).then(async (res) => {
-                        //                 //         if (res.data == "add") {
-                        //                 //                 (document.querySelector("#fav") as any).style.color = "#00AEEC"
-                        //                 //         } else {
-                        //                 //                 (document.querySelector("#fav") as any).style.color = "#ffffff"
-                        //                 //         }
-                        //                 //         const { data }: { data: Data } = await axios.get('/videoList')
-                        //                 //         console.log(data)
-                        //                 //         videoData.mydata = data.msg
-                        //                 //         mydata.value = data.msg
-                        //                 // })
-                        //         }
-                        // },
 
                 ],
         })
@@ -219,10 +214,11 @@ function initArtPlayer(videoUrl: string, email: string, time: number) {
         })
         instance.value.on('ready', async () => {
                 const v = document.querySelector("video")
-                title.value =document.querySelector("#videoTitle") 
+                title.value = document.querySelector("#videoTitle")
                 v?.addEventListener("touchstart", (event) => {
                         event.preventDefault()
                 })
+                instance.value?.play()
                 n.value = setInterval(() => {
                         sendVideoInfo()
                 }, 2000)
@@ -271,6 +267,8 @@ function preVideo() {
                                                 p: videoData.currentVideoPath
                                         }
                                 }).then((res_time) => {
+                                        localStorage.setItem("artplayer_settings", `{"times":{"/${email}${videoData.currentVideoPath}":${res_time}}}`)
+
                                         instance.value?.switchUrl((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`))
 
 
@@ -303,9 +301,10 @@ function nextVideo() {
                                                 p: videoData.currentVideoPath
                                         }
                                 }).then((res_time) => {
-                                        instance.value?.switchUrl((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`))
-                                        // initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`), email.value, res_time.data)
-
+                                        // instance.value!.url = `${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`
+                                        // instance.value?.switchUrl(())
+                                        initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + label}.mp4`), email.value, res_time.data)
+                                        // localStorage.setItem("artplayer_settings", `{"times":{"/${email}${videoData.currentVideoPath}":${res_time}}}`)
                                 })
                         })
                 }
@@ -376,13 +375,19 @@ let handleClick = (f1: any, f2: TreeNode) => {
 
                 currentVideoUrl.value = (`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + f2.label}.mp4`)
                 videoData.currentVideoPath = temp.join("/") + "/" + f2.label
+
                 axios.get("/video/videoTime", {
                         params: {
                                 p: videoData.currentVideoPath
                         }
                 }).then((res_time) => {
-                        instance.value?.switchUrl((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + f2.label}.mp4`))
-                        // initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + f2.label}.mp4`), email.value, res_time.data)
+                        console.log(videoData.currentVideoPath)
+
+                        // instance.value?.destroy(false)
+
+                        // instance.value?.switchUrl((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + f2.label}.mp4`))
+                        // debugger
+                        initArtPlayer((`${srcBaseUrl.value}${res.data}/videodata/NonM3U8${temp.join("/") + "/" + f2.label}.mp4`), email.value, res_time.data)
                 })
         })
 }

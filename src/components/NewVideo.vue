@@ -33,7 +33,6 @@ import type { TreeNode } from 'element-plus/es/components/tree-v2/src/types';
 import { ref, onMounted, onBeforeUnmount, nextTick, watchEffect } from 'vue';
 import { useVideoStore } from '../assets/Video'
 import Hls from "hls.js"
-import { vi } from 'element-plus/es/locale';
 Artplayer.CONTROL_HIDE_TIME = 2000;
 let videoData = useVideoStore()
 const instance = ref<Artplayer | null>(null);
@@ -72,13 +71,14 @@ function playM3u8(video: any, url: string, art: any) {
         }
 }
 function initArtPlayer(videoUrl: string, email: string, time: number) {
-
+        console.log(videoUrl)
         localStorage.setItem("artplayer_settings", `{"times":{"/${email}${videoData.currentVideoPath}":${time}}}`)
         instance.value = new Artplayer({
                 container: artRef.value,
                 url: videoUrl,
-                type: 'm3u8',
+
                 id: `/${email}${videoData.currentVideoPath}`,
+                type: 'm3u8',
                 customType: {
                         m3u8: playM3u8,
                 },
