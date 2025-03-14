@@ -104,7 +104,7 @@ const registerValidate = ref<FormInstance>()
 // const register_login = ref("注册")
 const formData = reactive({
   email: "",
-  password: '',
+  password: "",
 })
 const registerData = ref({
   email: "",
@@ -125,7 +125,7 @@ const validateEmail = (rule: any, value: string, callback: any) => {
   callback()
 }
 const validatePassword = (rule: any, value: string, callback: any) => {
-  if (value === '') {
+  if (value === "") {
     callback(new Error('密码不能为空'))
   } else {
     callback()
@@ -155,19 +155,18 @@ const login = (ruleFormRef: any) => {
           email: formData.email,
           password: formData.password,
         })
-        const {data}: { data:MyResponse } = res
+        const {data}: { data: MyResponse } = res
         if (data.code == 503) {
           ElMessage({
             type: "error",
             message: "密码错误"
           })
-        } else if (data.code===501){
+        } else if (data.code === 501) {
           ElMessage({
             type: "error",
             message: "用户不存在"
           })
-
-        }else {
+        } else {
           localStorage.setItem("token", (data.data as string))
           router.push({
             name: "Home"
@@ -190,10 +189,8 @@ const validate_code = (registerValidate: any) => {
   registerValidate.validate(async (isValid: boolean, invalidFields: any) => {
     if (isValid) {
       axios.post("/user/getVerificationCode", {
-        data: {
-          email: registerData.value.email,
-          password: registerData.value.password,
-        }
+        email: registerData.value.email,
+        password: registerData.value.password,
       }).then((res) => {
         const {data}: { data: { status: number, msg: string } } = res
         if (data.status == 0) {
