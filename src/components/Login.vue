@@ -90,12 +90,14 @@
 </template>
 
 <script lang="ts" setup>
+
 import {ref, reactive} from "vue"
 import {validate} from "email-validator"
 import {ElMessage, FormInstance} from "element-plus"
 import axios from 'axios'
 import router from "../assets/route"
 import {computed} from "vue"
+import {MyResponse} from "../declare";
 
 const ruleFormRef = ref<FormInstance>()
 const registerValidate = ref<FormInstance>()
@@ -114,7 +116,7 @@ const show_register = ref(false)
 const register_login = computed(() => {
   return show_register.value ? "登录" : "注册"
 })
-const validateEmail = (rule: any, value: any, callback: any) => {
+const validateEmail = (rule: any, value: string, callback: any) => {
   if (value === '') {
     callback(new Error('请输入电子邮件地址'))
   } else if (!validate(value)) {
@@ -122,7 +124,7 @@ const validateEmail = (rule: any, value: any, callback: any) => {
   }
   callback()
 }
-const validatePassword = (rule: any, value: any, callback: any) => {
+const validatePassword = (rule: any, value: string, callback: any) => {
   if (value === '') {
     callback(new Error('密码不能为空'))
   } else {
@@ -149,29 +151,24 @@ const login = (ruleFormRef: any) => {
   ruleFormRef.validate(async (isValid: boolean, invalidFields: any) => {
     if (isValid) {
       try {
-        const res = await axios.post("/login", {
+        const res = await axios.post("/user/login", {
           email: formData.email,
           password: formData.password,
         })
-        const {data}: { data: { status: number, msg: string, token?: string | undefined } } = res
-        if (data.status == -1) {
-          if (data.msg == "pwd error") {
-            ElMessage({
-              type: "error",
-              message: "密码错误"
-            })
-          } else if (data.msg == "not find") {
-            ElMessage({
-              type: "error",
-              message: "用户不存在"
-            })
-          }
-        } else {
+        const {data}: { data:MyResponse } = res
+        if (data.code == 503) {
           ElMessage({
-            type: "success",
-            message: "登陆成功！"
+            type: "error",
+            message: "密码错误"
           })
-          localStorage.setItem("token", (data.token as string))
+        } else if (data.code===501){
+          ElMessage({
+            type: "error",
+            message: "用户不存在"
+          })
+
+        }else {
+          localStorage.setItem("token", (data.data as string))
           router.push({
             name: "Home"
           })
@@ -192,7 +189,7 @@ const register = () => {
 const validate_code = (registerValidate: any) => {
   registerValidate.validate(async (isValid: boolean, invalidFields: any) => {
     if (isValid) {
-      axios.post("/register/step1", {
+      axios.post("/user/getVerificationCode", {
         data: {
           email: registerData.value.email,
           password: registerData.value.password,

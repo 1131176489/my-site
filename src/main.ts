@@ -19,7 +19,7 @@ app.use(router)
 app.use(pinia)
 console.log(import.meta)
 if (import.meta.env.MODE == 'development') {
-        axios.defaults.baseURL = "http://192.168.0.106:9000"
+        axios.defaults.baseURL = "http://localhost"
 }
 else {
         axios.defaults.baseURL = "/"
@@ -36,19 +36,19 @@ router.beforeEach(async (to, from) => {
                         return { name: "Login" }
                 }
         }
-        else {
-                axios.get("video/getInfo", {
-                        headers: {
-                                'Authorization': "Bearer " + localStorage.getItem("token"),
-                        },
-                }).then(() => {
-                }).catch(() => {
-                        localStorage.removeItem("token")
-                        router.push({
-                                name: "Login"
-                        })
-                })
-                axios.defaults.headers.Authorization = "Bearer " + isAuthenticated
-        }
+        // else {
+        //         axios.get("video/getInfo", {
+        //                 headers: {
+        //                         'Authorization': "Bearer " + localStorage.getItem("token"),
+        //                 },
+        //         }).then(() => {
+        //         }).catch(() => {
+        //                 localStorage.removeItem("token")
+        //                 router.push({
+        //                         name: "Login"
+        //                 })
+        //         })
+        //         axios.defaults.headers.Authorization = "Bearer " + isAuthenticated
+        // }
 })
 app.mount("#app")  
