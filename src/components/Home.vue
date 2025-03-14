@@ -136,42 +136,42 @@ const resetForm = (formEl: FormInstance | undefined) => {
   formEl.resetFields()
 }
 const items = [
-  {
-    name: "vuepress",
-    href: "vuepress"
-  },
+  // {
+  //   name: "vuepress",
+  //   href: "vuepress"
+  // },
   {
     name: "有道翻译",
     href: "https://fanyi.youdao.com/index.html"
   },
-  {
-    name: "漫画",
-    href: ":9001/"
-  },
-  {
-    name: "M3U8视频",
-    href: "/#/M3U8Video"
-  },
-  {
-    name: "m3u8",
-    href: "/#/m3u8"
-  },
-  {
-    name: "学习",
-    href: "/#/study"
-  },
+  // {
+  //   name: "漫画",
+  //   href: ":9001/"
+  // },
+  // {
+  //   name: "M3U8视频",
+  //   href: "/#/M3U8Video"
+  // },
+  // {
+  //   name: "m3u8",
+  //   href: "/#/m3u8"
+  // },
+  // {
+  //   name: "学习",
+  //   href: "/#/study"
+  // },
   {
     name: "日历",
     href: "/#/calendar"
   },
-  {
-    name: "FLV",
-    href: "/#/flv"
-  },
-  {
-    name: "非M3U8视频",
-    href: "/#/NonM3U8Video"
-  },
+  // {
+  //   name: "FLV",
+  //   href: "/#/flv"
+  // },
+  // {
+  //   name: "非M3U8视频",
+  //   href: "/#/NonM3U8Video"
+  // },
   {
     name: "文件下载",
     href: "/#/FileDownLoad"
