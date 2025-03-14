@@ -63,21 +63,21 @@ import { reactive, ref } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 const ruleFormRef = ref<FormInstance>()
 const validatePwd = (rule: any, value: string, callback: any) => {
-        if (value === '') {
+        if (value === "") {
                 callback(new Error('请输入原密码'))
         } else {
                 callback()
         }
 }
 const validateInputPass = (rule: any, value: any, callback: any) => {
-        if (value === '') {
+        if (value === "") {
                 callback(new Error('请输入新密码'))
         } else {
                 callback()
         }
 }
 const validateCheckInputPass = (rule: any, value: any, callback: any) => {
-        if (value === '') {
+        if (value === "") {
                 callback(new Error('请再次输入新密码'))
         } else if (value != ruleForm.inputPass) {
                 callback(new Error('两次密码不一致'))
@@ -87,8 +87,8 @@ const validateCheckInputPass = (rule: any, value: any, callback: any) => {
 }
 const ruleForm = reactive({
         pwd: "",
-        inputPass: '',
-        checkInputPass: '',
+        inputPass: "",
+        checkInputPass: "",
 
 })
 
