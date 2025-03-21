@@ -25,6 +25,16 @@ export default defineConfig({
     },
     server: {
         host: true,
+        proxy:{
+            '/BilibiliVideo':{
+                target:"http://localhost",
+                changeOrigin:true,
+            },
+            '/file':{
+                target:"http://localhost",
+                changeOrigin:true,
+            },
+        }
     },
     resolve: {
         alias: {

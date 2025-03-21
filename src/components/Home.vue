@@ -26,19 +26,19 @@
       </el-form-item>
     </el-form>
     <template #footer>
-                        <span class="dialog-footer">
-                                <el-button @click="dialogVisible = false">取消</el-button>
-                                <el-button type="primary" @click="submitForm">
-                                        确认
-                                </el-button>
-                        </span>
+      <span class="dialog-footer">
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitForm">
+                确认
+        </el-button>
+      </span>
     </template>
   </el-dialog>
   <div class="container">
     <el-button plain v-on:click="logout">登出账号</el-button>
     <el-button plain v-on:click="logoff">注销账号</el-button>
     <el-divider/>
-    <el-button plain v-on:click="add_link">添加链接</el-button>
+<!--    <el-button plain v-on:click="add_link">添加链接</el-button>-->
     <!-- <el-butto plain v-on:click="del_link">删除链接</el-butto
 n> -->
 
@@ -59,8 +59,14 @@ import router from '../assets/route'
 import {globalStore} from "../assets/Global"
 import {reactive, ref} from 'vue'
 
-
+const token = localStorage.getItem("token");
+if (!token){
+  router.push({
+    name: "Login"
+  })
+}
 import type {FormInstance, FormRules} from 'element-plus'
+import {MyResponse} from "../declare";
 
 const ruleFormRef = ref<FormInstance>()
 const validatePwd = (rule: any, value: string, callback: any) => {
@@ -130,51 +136,22 @@ const submitForm = () => {
   })
 
 }
-
-const resetForm = (formEl: FormInstance | undefined) => {
-  if (!formEl) return
-  formEl.resetFields()
-}
 const items = [
-  // {
-  //   name: "vuepress",
-  //   href: "vuepress"
-  // },
   {
     name: "有道翻译",
     href: "https://fanyi.youdao.com/index.html"
   },
-  // {
-  //   name: "漫画",
-  //   href: ":9001/"
-  // },
-  // {
-  //   name: "M3U8视频",
-  //   href: "/#/M3U8Video"
-  // },
-  // {
-  //   name: "m3u8",
-  //   href: "/#/m3u8"
-  // },
-  // {
-  //   name: "学习",
-  //   href: "/#/study"
-  // },
   {
     name: "日历",
-    href: "/#/calendar"
+    href: "/#/Calendar"
   },
-  // {
-  //   name: "FLV",
-  //   href: "/#/flv"
-  // },
-  // {
-  //   name: "非M3U8视频",
-  //   href: "/#/NonM3U8Video"
-  // },
   {
     name: "文件下载",
     href: "/#/FileDownLoad"
+  },
+  {
+    name: "视频",
+    href: "/#/VideoInfo"
   }
 ]
 const logout = () => {
@@ -198,28 +175,31 @@ const logoff = () => {
         type: 'warning',
       }
   ).then(() => {
-    axios.post("/api/logoff", {}).then(() => {
+    axios.post("/user/logOff").then((res) => {
+      const {data}:{data:MyResponse}= res
+      if (data.code === 504){
+        ElMessage({
+          type: 'success',
+          message: '注销失败，用户未登录',
+        })
+      }else {
+        ElMessage({
+          type: 'success',
+          message: '注销成功',
+        })
+      }
       localStorage.clear()
       router.push({
         name: "Login"
       })
-      ElMessage({
-        type: 'success',
-        message: '注销成功',
-      })
-
-    }).catch(() => {
+    }).catch((e) => {
+      console.log(e)
       ElMessage({
         type: 'error',
-        message: '注销失败',
+        message: '网络异常',
       })
     })
   })
-      .catch(() => {
-      })
-}
-let add_link = async () => {
-
 }
 const changePwd = () => {
   dialogVisible.value = true
