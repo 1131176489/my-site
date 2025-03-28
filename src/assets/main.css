@@ -3,7 +3,6 @@
     padding: 0;
     box-sizing: border-box;
 }
-
 html,
 body,
 #app {
@@ -12,46 +11,6 @@ body,
     height: 100%;
     width: 100%;
 }
-/*#app{*/
-/*    background-color: gray;*/
-/*}*/
-/*html{*/
-/*    height: calc(var(--vh, 1vh) * 100);*/
-/*}*/
-.common-layout,
-.el-container {
-    height: 100%;
+.art-state{
+    display: none!important;
 }
-
-.el-tree-node > .el-tree-node__children {
-    overflow: visible !important;
-}
-
-.el-tree-node > .el-collapse-transition-leave-active {
-    overflow: hidden !important;
-}
-
-
-.el-tree-node > .el-collapse-transition-enter-active {
-    overflow: hidden !important;
-}
-
-.currentHeightLight {
-    font-weight: 900;
-}
-
-@media only screen and (max-width: 765px) {
-    .el-dialog {
-        width: 85% !important;
-
-    }
-
-    .el-calendar-day {
-        height: 50px !important;
-    }
-}
-
-:root {
-    --headerHeightMobbie: 59px;
-}
-
