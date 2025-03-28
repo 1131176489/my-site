@@ -1,7 +1,7 @@
 <template>
   <div class="container">
-    <el-link v-for="(item, index ) in items" type="primary" v-bind:href="item.href" target="_blank">{{ item.name }}
-    </el-link>
+    <a v-for="(item, index ) in items" type="primary" v-bind:href="item.href" target="_blank">{{ item.name }}
+    </a>
   </div>
 </template>
 <script setup lang="ts">
@@ -20,11 +20,18 @@ const items = [
   }
 ]
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .el-link {
   margin: 0 5px;
 }
 .container {
   padding: 5px;
+  display: flex;
+
+  justify-content: start;
+  a{
+    width: fit-content;
+    padding-right: 5px;
+  }
 }
 </style>

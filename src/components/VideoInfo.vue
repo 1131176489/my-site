@@ -50,8 +50,6 @@ axios.get("/file/getDirectoryList", {
   data.value = res.data
 })
 </script>
-
-
 <style scoped>
 @media screen and (min-width: 0px ) and (max-width: 1400px){
   .container{
