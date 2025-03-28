@@ -9,20 +9,23 @@ import {resolve} from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
     build: {
+        emptyOutDir:true,
+        outDir:"d:/static/dist",
         minify: 'terser',
         terserOptions: {
             compress: {
-                drop_console: true,
-                drop_debugger: true,
+                // drop_console: true,
+                // drop_debugger: true,
             },
         },
         rollupOptions: {
             input: {
                 main: resolve(__dirname, 'index.html'),
-                video: resolve(__dirname, 'video/video.html'),
+                // video: resolve(__dirname, 'video/video.html'),
             },
         },
     },
+    base:"./",
     server: {
         host: true,
         proxy:{
@@ -50,5 +53,5 @@ export default defineConfig({
         Components({
             resolvers: [ElementPlusResolver()],
         }),
-    ]
+    ],
 })

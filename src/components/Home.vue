@@ -58,16 +58,9 @@ import {ElMessage, ElMessageBox} from 'element-plus';
 import router from '../assets/route'
 import {globalStore} from "../assets/Global"
 import {reactive, ref} from 'vue'
-
-const token = localStorage.getItem("token");
-if (!token){
-  router.push({
-    name: "Login"
-  })
-}
 import type {FormInstance, FormRules} from 'element-plus'
 import {MyResponse} from "../declare";
-
+const token = localStorage.getItem("token");
 const ruleFormRef = ref<FormInstance>()
 const validatePwd = (rule: any, value: string, callback: any) => {
   if (value === "") {

@@ -1,51 +1,57 @@
 * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 html,
 body,
 #app {
-        font-size: 16px;
-        height: 100%;
-        width: 100%;
-        box-sizing: border-box;
+    overscroll-behavior-y: none;
+    font-size: 16px;
+    height: 100%;
+    width: 100%;
 }
-
+/*#app{*/
+/*    background-color: gray;*/
+/*}*/
+/*html{*/
+/*    height: calc(var(--vh, 1vh) * 100);*/
+/*}*/
 .common-layout,
 .el-container {
-        height: 100%;
+    height: 100%;
 }
 
-.el-tree-node>.el-tree-node__children {
-        overflow: visible !important;
+.el-tree-node > .el-tree-node__children {
+    overflow: visible !important;
 }
 
-.el-tree-node>.el-collapse-transition-leave-active {
-        overflow: hidden !important;
+.el-tree-node > .el-collapse-transition-leave-active {
+    overflow: hidden !important;
 }
 
 
-.el-tree-node>.el-collapse-transition-enter-active {
-        overflow: hidden !important;
+.el-tree-node > .el-collapse-transition-enter-active {
+    overflow: hidden !important;
 }
 
 .currentHeightLight {
-        font-weight: 900;
+    font-weight: 900;
 }
 
 @media only screen and (max-width: 765px) {
-        .el-dialog {
-                width: 85% !important;
+    .el-dialog {
+        width: 85% !important;
 
-        }
-        .el-calendar-day {
-                height: 50px !important;
-        }
+    }
+
+    .el-calendar-day {
+        height: 50px !important;
+    }
 }
 
 :root {
-        --headerHeightMobbie: 59px;
+    --headerHeightMobbie: 59px;
 }
 

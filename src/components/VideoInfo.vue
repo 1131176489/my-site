@@ -53,24 +53,52 @@ axios.get("/file/getDirectoryList", {
 
 
 <style scoped>
-.container{
-  display: flex;
-  height: 100%;
+@media screen and (min-width: 0px ) and (max-width: 1400px){
+  .container{
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+  }
+  .list{
+    flex: 1;
+    overflow-y: scroll;
+  }
+  .files-list{
+    flex: 1;
+    overflow-y: scroll;
+  }
+  .list-item,.files-list-item {
+    border: 2px solid black;
+    font-size: 24px;
+    text-align: center;
+    padding: 30px;
+    margin-bottom: 5px;
+    cursor: pointer;
+  }
 }
-.list{
-  overflow-y: scroll;
-}
-.files-list{
+@media screen and (min-width: 1400px){
+  .container{
+    display: flex;
+    height: 100%;
+  }
+  .list{
+    overflow-y: scroll;
+  }
+  .files-list{
 
-  flex-grow: 1;
-  overflow-y: scroll;
+    flex-grow: 1;
+    overflow-y: scroll;
+  }
+  .list-item,.files-list-item {
+    border: 2px solid black;
+    font-size: 24px;
+    text-align: center;
+    padding: 30px;
+    margin-bottom: 5px;
+    cursor: pointer;
+  }
 }
-.list-item,.files-list-item {
-  border: 2px solid black;
-  font-size: 24px;
-  text-align: center;
-  padding: 30px;
-  margin-bottom: 5px;
-  cursor: pointer;
+.files-list-item{
+  background-color: #eee;
 }
 </style>
