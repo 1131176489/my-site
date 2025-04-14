@@ -1,227 +1,487 @@
 <template>
-        <el-dialog
-                   v-model="dialogVisible"
-                   title="添加事项"
-                   width="30%"
-                   :before-close="handleClose">
-                <div class="m-4">
 
-                        <el-cascader v-model="value1" :options="options" @change="handleChange" />
-                        <el-form :model="form" label-width="120px" :label-position="'left'">
-                                <el-form-item label="事项">
-                                        <el-input v-model="form.item" />
-                                </el-form-item>
-                        </el-form>
-                </div>
+  <div class="container">
+    <div class="left">
+      <h3>{{'待完成事项，当前日期'+getNowString()}}</h3>
+      <el-button type="primary" class="add" @click="onClickAdd">添加</el-button>
+      <el-button type="primary" class="add" @click="onClickSelectDate">选择日期</el-button>
+      <el-button type="primary" class="add" @click="onClickUncompletedAll">全部</el-button>
+      <el-button type="primary" class="add" @click="item.onClickUncompletedFun" v-for="item in option">
+        {{ item.label }}
+      </el-button>
+      <div class="items">
+        <div v-for="item in uncompletedItem" class="item">
+          <span>{{ item.name }}</span>
+          <div class="btns">
+            <el-button type="primary" @click="onClickEdit(item.id,item.name)">编辑</el-button>
+            <el-button type="primary" @click="onClickStatistics(item.id)">完成情况</el-button>
+            <el-button type="primary" @click="onClickComplete(item.id)">完成</el-button>
+            <el-button type="danger" @click="onClickDelete(item.id)">删除</el-button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="right">
+      <h3>已完成</h3>
+      <el-button type="primary" class="add" @click="onClickCompletedAll">全部</el-button>
+      <el-button type="primary" class="add" @click="item.onClickCompletedFun" v-for="item in option">
+        {{ item.label }}
+      </el-button>
+      <div class="items">
+        <div v-for="item in completedItem" class="item">
+          <span>{{ item.name }}</span>
+          <div class="btns">
+            <el-button type="primary" @click="onClickStatistics(item.id)">完成情况</el-button>
+            <el-button type="primary" @click="onClickRecover(item.id)">恢复</el-button>
+            <el-button type="danger" @click="onClickDelete(item.id)">删除</el-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="calendar">
+    <el-dialog v-model="dialogFormVisible" title="事项" width="500">
+      <el-form :model="form" ref="refForm">
+        <el-form-item label="事项名" :label-width="formLabelWidth" >
+          <el-input v-model="form.name" autocomplete="off"/>
+        </el-form-item>
+        <el-form-item label="事项重复周期" :label-width="formLabelWidth">
+          <el-select v-model="form.date" placeholder="请选择一个日期">
+            <el-option v-for="item in option"
+                       :key="item.key"
+                       :label="item.label"
+                       :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogFormVisible = false">取消</el-button>
+          <el-button type="primary" @click="onClickConfirm">
+            确定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
 
-                <template #footer>
-                        <span class="dialog-footer">
-                                <el-button @click="dialogVisible = false">取消</el-button>
-                                <el-button type="primary" @click="comfirm">
-                                        确定
-                                </el-button>
-                        </span>
-                </template>
-        </el-dialog>
-        <el-calendar>
-                <template #header="{ date }">
-                        <span>{{ date }}</span>
+    <el-dialog class="test" v-model="dialogStatisticsVisible" title="统计" top="50px">
+      <el-calendar :key="calendarKey">
+        <template #date-cell="{ data }">
+          <p :class="data.isSelected ? 'is-selected' : ''">
+            {{ data.day.split('-').slice(1).join('-') }}
+          </p>
+          <p>
+            {{ render(data.day) }}
+          </p>
+        </template>
+      </el-calendar>
+    </el-dialog>
 
-                </template>
-                <template #date-cell="{ data }">
-                        <p :class="data.isSelected ? 'is-selected' : ''" @click="myclick(data)" style="height: 100%;">
-                                {{ data.day.split('-').slice(2).join('') }}
-                        </p>
-                </template>
-        </el-calendar>
-        <el-card class="box-card">
-                <template #header>
-                        <div class="card-header">
-                                <span>今日事项</span>
-                                <el-button v-on:click="addItem">
-                                        添加事项
-                                </el-button>
+    <el-dialog v-model="dialogDateSelect" title="选择日期" width="500">
+      <el-date-picker
+          v-model="selectedDate"
+          type="date"
+          placeholder="Select date"
+      />
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogDateSelect = false">取消</el-button>
+          <el-button type="primary" @click="dialogDateSelectConfirm">
+            确定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
 
-                        </div>
-                </template>
-                <div v-for="(item, index) in renderData" :key="index" class="text item">
-                        {{ item.word }}
-                        <span v-if="isDone(item.isDone)" @click="">✔️</span>
-                        <span v-else style="cursor: pointer;">❌</span>
-                        <el-button v-on:click="delItem(item.word)">
-                                删除事项
-                        </el-button>
-                        <el-button v-on:click="alreadyDone(item.word)">
-                                设为已完成
-                        </el-button>
-                        <el-button v-on:click="notDone(item.word)">
-                                设为未完成
-                        </el-button>
-                </div>
-        </el-card>
+    <el-dialog v-model="dialogEditVisible" title="编辑" width="500">
+      <el-form :model="form" ref="refForm">
+        <el-form-item label="事项名" :label-width="formLabelWidth">
+          <el-input v-model="form.name" autocomplete="off"/>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogEditVisible = false">取消</el-button>
+          <el-button type="primary" @click="onClickConfirmEdit">
+            确定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 <script lang="ts" setup>
-import axios from 'axios';
-import { computed, onMounted, reactive, ref } from 'vue';
-import moment from "moment"
-interface Item {
-        word: string
-        date: string
-        isDone: Array<string>
-}
-const value1 = ref("")
-const form = reactive({
-        item: "123"
-})
-const dialogVisible = ref(false)
-const items = ref<Array<Item>>([])
-const renderData = ref<Array<Item>>([])
-const selectDate = ref("")
-const toady = ref("")
-const options = [
-        {
-                value: 'unique',
-                label: '特定日期',
-        },
-        {
-                value: 'every',
-                label: '每个日期',
-        },
-]
-onMounted(() => {
-        axios.get("/api/getItem").then((res) => {
-                console.log(res.data)
-                if (res.data) {
-                        items.value = res.data
-                }
-                else {
-                        items.value = []
-                }
-                console.log(items.value)
-                toady.value = moment().format("yyyy-MM-DD")
-                selectDate.value = toady.value
-                myclick({ day: selectDate.value })
-        })
-})
-const isDone = (input: Array<string>) => {
-        for (let index = 0; index < input.length; index++) {
-                const element = input[index];
-                if (selectDate.value == element)
-                        return true
-        }
-        return false
-}
-const handleChange = (value: any) => {
-        value1.value = value[0]
-        console.log(value1.value)
-}
-const comfirm = () => {
-        let data
-        if (value1.value == "every") {
-                data = {
-                        date: "every",
-                        word: form.item,
-                        isDone: []
-                }
-        } else {
-                return
-        }
-        items.value.push(data)
-        axios.post("/api/addItem", {
-                items: items.value
-        }).then((res) => {
-                axios.get("/api/getItem").then((res) => {
-                        items.value = res.data
-                        myclick({ day: selectDate.value })
-                })
-                dialogVisible.value = false
-        })
-}
-const addItem = () => {
-        dialogVisible.value = true
-}
-const delItem = (input: string) => {
-        for (let index = 0; index < items.value.length; index++) {
-                const element = items.value[index];
-                if (element.word == input) {
-                        items.value.splice(index, 1)
-                        axios.post("/api/addItem", {
-                                items: items.value
-                        }).then((res) => {
-                                axios.get("/api/getItem").then((res) => {
-                                        items.value = res.data
-                                        myclick({ day: selectDate.value })
-                                })
-                                dialogVisible.value = false
-                        })
-                        return
-                }
-        }
-}
-const alreadyDone = (input: string) => {
-        for (let index = 0; index < items.value.length; index++) {
-                const element = items.value[index];
-                if (element.word == input) {
+import {onMounted, reactive, ref, UnwrapRef} from 'vue';
+import type {FormInstance} from 'element-plus'
+import moment from "moment";
+import axios from "axios";
+import {ElMessage} from "element-plus";
 
-                        items.value[index].isDone.push(selectDate.value)
-                        let s = new Set(items.value[index].isDone)
-                        items.value[index].isDone = [...s]
-                        axios.post("/api/addItem", {
-                                items: items.value
-                        }).then((res) => {
-                                axios.get("/api/getItem").then((res) => {
-                                        items.value = res.data
-                                        myclick({ day: selectDate.value })
-                                })
-                                dialogVisible.value = false
-                        })
-                        return
-                }
-        }
+type Item = {
+  id: number,
+  name: string,
+  completedDate: string[]
+  type: string,
+  startDate: string,
+  endDate: string,
+  commentObj:{[key:string]:string},
 }
-const notDone = (input: string) => {
-        for (let index = 0; index < items.value.length; index++) {
-                const element = items.value[index];
-                if (element.word == input) {
-                        console.log(items.value[index].isDone)
-                        for (let index1 = 0; index1 < items.value[index].isDone.length; index1++) {
-                                const element = items.value[index].isDone[index1];
-                                if (element == selectDate.value) {
-                                        items.value[index].isDone.splice(index1, 1)
-                                }
-                        }
-                        axios.post("/api/addItem", {
-                                items: items.value
-                        }).then((res) => {
-                                axios.get("/api/getItem").then((res) => {
-                                        items.value = res.data
-                                        myclick({ day: selectDate.value })
-                                })
-                                dialogVisible.value = false
-                        })
-                        return
-                }
-        }
+const EVERY_DAY = "everyDay"
+const WEEK = "week"
+const MONTH = "month"
+const ONE_DAY = "oneDay"
+const jsonPath = "d:/everyday.json"
+const formLabelWidth = '140px'
+let currentSelectedDate = Date.now()
+const getNowString = () => {
+  return moment(currentSelectedDate).format('YYYY-MM-DD')
 }
-const handleClose = () => {
-        dialogVisible.value = false
+const option = [
+  {
+    key: EVERY_DAY,
+    value: EVERY_DAY,
+    label: "每天",
+    onClickUncompletedFun: () => {
+      uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString())).filter(value => value.type === EVERY_DAY)
+    },
+    onClickCompletedFun: () => {
+      completedItem.value = items.filter(value => value.completedDate.includes(getNowString())).filter(value => value.type === EVERY_DAY)
+    },
+  },
+  {
+    key: WEEK,
+    value: WEEK,
+    label: "每个星期",
+    onClickUncompletedFun: () => {
+      uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString())).filter(value => value.type === WEEK)
+    },
+    onClickCompletedFun: () => {
+      completedItem.value = items.filter(value => value.completedDate.includes(getNowString())).filter(value => value.type === WEEK)
+    },
+  },
+  {
+    key: MONTH,
+    value: MONTH,
+    label: "每个月",
+    onClickUncompletedFun: () => {
+      uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString())).filter(value => value.type === MONTH)
+    },
+    onClickCompletedFun: () => {
+      completedItem.value = items.filter(value => value.completedDate.includes(getNowString())).filter(value => value.type === MONTH)
+    },
+  },
+  {
+    key: ONE_DAY,
+    value: ONE_DAY,
+    label: "具体某天",
+    onClickUncompletedFun: () => {
+      uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString())).filter(value => value.type === ONE_DAY)
+    },
+    onClickCompletedFun: () => {
+      completedItem.value = items.filter(value => value.completedDate.includes(getNowString())).filter(value => value.type === ONE_DAY)
+    },
+  },
+]
+let items: Item[] = []
+const dialogFormVisible = ref(false)
+const dialogStatisticsVisible = ref(false)
+const dialogDateSelect = ref(false)
+const dialogEditVisible = ref(false)
+const selectedDate = ref(new Date())
+const refForm = ref<FormInstance>()
+const calendarKey = ref(0)
+let form = reactive({
+  name: '',
+  date: EVERY_DAY,
+  startDate: new Date(),
+  endDate: new Date(),
+})
+const uncompletedItem = ref<Item[]>([])
+const completedItem = ref<Item[]>([])
+let statisticsItem = ref<Item>();
+let editId = 0
+const updateAndSave = async () => {
+  await window.postForm({
+    dest: 'd:/',
+    filename: "everyday.json",
+    blob: JSON.stringify(items)
+  })
+  uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
+  completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
 }
-let myclick = (data: any) => {
-        console.log(data.day)
-        selectDate.value = data.day
-        renderData.value = []
-        for (let index = 0; index < items.value.length; index++) {
-                const element = items.value[index];
-                if (element.date == "every") {
-                        renderData.value.push(element)
-                } else if (element.date == data.day) {
-                        renderData.value.push(element)
-                }
-        }
+function getFormattedDatesInMonth() {
+  const date = new Date(currentSelectedDate)
+  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  const nextMonthFirstDay = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+  // @ts-ignore
+  const daysInMonth = Math.floor((nextMonthFirstDay - firstDay) / (1000 * 60 * 60 * 24));
+
+  const dates = [];
+  for (let i = 0; i < daysInMonth; i++) {
+    const day = new Date(firstDay);
+    day.setDate(firstDay.getDate() + i);
+
+    // 格式化日期为 YYYY-MM-DD
+    const formattedDate = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+    dates.push(formattedDate);
+  }
+
+  return dates;
 }
+function getFormattedWeekDates() {
+  const date = new Date(currentSelectedDate)
+  const dayOfWeek = date.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(date);
+  monday.setDate(date.getDate() + mondayOffset);
+
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + i);
+
+    // 格式化日期为 YYYY-MM-DD
+    const formattedDate = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+    weekDates.push(formattedDate);
+  }
+
+  return weekDates;
+}
+const onClickAdd = () => {
+  Object.assign(form, {name: "", date: EVERY_DAY, startDate: new Date(), endDate: new Date()})
+  dialogFormVisible.value = true
+}
+const onClickSelectDate = ()=>{
+  dialogDateSelect.value = true
+}
+const onClickUncompletedAll = () => {
+  uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
+}
+const onClickCompletedAll = () => {
+  completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
+}
+
+const onClickConfirm = () => {
+  dialogFormVisible.value = false
+  console.log(form)
+  const obj: Item = {
+    id: Date.now(),
+    name: form.name,
+    completedDate: [],
+    type: form.date,
+    startDate: moment(form.startDate).format('YYYY-MM-DD'),
+    endDate: "",
+  }
+  if (form.date === EVERY_DAY) {
+
+  } else if (form.date === WEEK) {
+
+  } else if (form.date === MONTH) {
+
+  } else if (form.date === ONE_DAY) {
+
+  }
+  items.push(obj)
+  console.log(items)
+  updateAndSave()
+}
+
+const onClickEdit = (id: number, name: string)=>{
+  editId = id
+  form.name = name
+  dialogEditVisible.value = true
+}
+const onClickComplete = (id: number) => {
+  let el = items[0];
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].id === id) {
+      el = items[i]
+      break
+    }
+  }
+
+  if (el.type === EVERY_DAY) {
+    el.completedDate.push(getNowString())
+  } else if (el.type === WEEK) {
+    const array = getFormattedWeekDates()
+    for (let i = 0; i < array.length; i++) {
+      el.completedDate.push(array[i])
+    }
+  } else if (el.type === MONTH) {
+    const array = getFormattedDatesInMonth()
+    for (let i = 0; i < array.length; i++) {
+      el.completedDate.push(array[i])
+    }
+  } else if (el.type === ONE_DAY) {
+
+  }
+  console.log(items)
+  updateAndSave()
+}
+
+const onClickDelete = (id: number) => {
+  const index = items.findIndex(value => value.id === id)
+  items.splice(index, 1)
+  console.log(items)
+  updateAndSave()
+}
+const onClickRecover = (id: number) => {
+  function removeFirstOccurrence(arr:Array<string>, value:string) {
+    const index = arr.indexOf(value);
+    if (index > -1) {
+      arr.splice(index, 1);
+    }
+    return arr;
+  }
+
+  let el = items[0];
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].id === id) {
+      el = items[i]
+      break
+    }
+  }
+
+
+  if (el.type === EVERY_DAY) {
+    removeFirstOccurrence(el.completedDate,getNowString())
+  } else if (el.type === WEEK) {
+    const array = getFormattedWeekDates()
+    for (let i = 0; i < array.length; i++) {
+      removeFirstOccurrence(el.completedDate,array[i])
+    }
+  } else if (el.type === MONTH) {
+    const array = getFormattedDatesInMonth()
+    for (let i = 0; i < array.length; i++) {
+      removeFirstOccurrence(el.completedDate,array[i])
+    }
+  } else if (el.type === ONE_DAY) {
+
+  }
+  console.log(items)
+  updateAndSave()
+}
+
+const dialogDateSelectConfirm = () => {
+  const timestamp = new Date(selectedDate.value).getTime()
+  console.log(timestamp);
+  console.log(selectedDate.value);
+  moment(selectedDate.value)
+
+  if (timestamp>Date.now()){
+    ElMessage.error('请选择之前的日期')
+    return
+  }
+  currentSelectedDate = timestamp
+  uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
+  completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
+  dialogDateSelect.value = false
+}
+
+const onClickConfirmEdit = ()=>{
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].id === editId){
+      items[i].name = form.name
+      break
+    }
+  }
+  form.name = ''
+  editId = 0
+  updateAndSave()
+  dialogEditVisible.value = false
+}
+// 点击完成按钮
+const onClickStatistics = (id: number) => {
+  calendarKey.value++
+  statisticsItem.value = items.find(value => value.id === id) as Item
+  console.log(statisticsItem.value)
+  dialogStatisticsVisible.value = true
+}
+// 日历渲染函数
+const render = (day: string) => {
+  const now = Date.now()
+  const timeStamp = new Date(day).getTime() - 8 * 60 * 60 * 1000
+  const startDate = new Date(statisticsItem.value!.startDate).getTime()  - 8 * 60 * 60 * 1000
+  console.log(timeStamp < startDate || timeStamp > now)
+  console.log('timeStamp:',timeStamp )
+  console.log('startDate:',startDate )
+  console.log('now      :' ,now)
+  if (statisticsItem.value!.completedDate.includes(day)){
+    return '✔️'
+  }
+  if ( timeStamp < startDate || timeStamp > now) {
+    return ''
+  }
+  return '✘'
+}
+
+onMounted(async () => {
+  const res = await axios.get("/file/getFileByAbsolutePath", {
+    params: {
+      path: jsonPath
+    },
+    responseType: "text"
+  })
+  if (res.data) {
+    items = JSON.parse(res.data)
+    uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
+    completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
+  }
+})
+
+
 </script>
-<style>
-.is-selected {
-        color: #1989fa;
+
+<style lang="scss" scoped>
+.container {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  overflow-y: hidden;
+
+  & > div {
+    border: #cccccc solid 1px;
+    flex: 1;
+    margin: 5px;
+    overflow: auto;
+  }
+
+  h3 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 5px;
+  }
+
+  .add {
+    margin: 5px 0 5px 5px;
+  }
+
+  .items {
+    .item {
+      border: #cccccc 1px solid;
+      padding: 20px;
+      border-radius: 50px;
+      margin: 0 5px 5px 5px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+  }
+}
+.text-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+</style>
+<style lang="scss">
+.calendar{
+
+    .el-input{
+      width: 250px !important;
+    }
+
 }
 </style>

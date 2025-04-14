@@ -17,7 +17,11 @@ const items = [
   {
     name: "视频",
     href: "/#/VideoInfo"
-  }
+  },
+  {
+    name: "选择文件夹",
+    href: "/#/SelectDirectory"
+  },
 ]
 </script>
 <style lang="scss" scoped>

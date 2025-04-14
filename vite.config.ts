@@ -9,8 +9,8 @@ import {resolve} from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
     build: {
-        emptyOutDir:true,
-        outDir:"d:/static/dist",
+        emptyOutDir: true,
+        outDir: "d:/static/dist",
         minify: 'terser',
         terserOptions: {
             compress: {
@@ -25,17 +25,17 @@ export default defineConfig({
             },
         },
     },
-    base:"./",
+    base: "./",
     server: {
         host: true,
-        proxy:{
-            '/BilibiliVideo':{
-                target:"http://localhost",
-                changeOrigin:true,
+        proxy: {
+            '/BilibiliVideo': {
+                target: "http://localhost",
+                changeOrigin: true,
             },
-            '/file':{
-                target:"http://localhost",
-                changeOrigin:true,
+            '/file': {
+                target: "http://localhost",
+                changeOrigin: true,
             },
         }
     },
