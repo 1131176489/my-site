@@ -1,26 +1,32 @@
 <template>
   <div class="container">
-    <a v-for="(item, index ) in items" type="primary" v-bind:href="item.href" target="_blank">{{ item.name }}
-    </a>
+    <RouterLink
+        :to="{name:item.componentName}"
+        target="_blank"
+        v-for="item in items">
+      {{ item.name }}
+    </RouterLink>
   </div>
 </template>
 <script setup lang="ts">
+import {RouterLink} from "vue-router";
+
 const items = [
   {
+    componentName:'Calendar',
     name: "日历",
-    href: "/#/Calendar"
   },
   {
+    componentName:'FileDownLoad',
     name: "文件下载",
-    href: "/#/FileDownLoad"
   },
   {
+    componentName:'VideoInfo',
     name: "视频",
-    href: "/#/VideoInfo"
   },
   {
+    componentName:'SelectDirectory',
     name: "选择文件夹",
-    href: "/#/SelectDirectory"
   },
 ]
 </script>

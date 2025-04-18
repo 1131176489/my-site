@@ -1,49 +1,86 @@
 <template>
 
   <div class="container">
-    <div class="left">
-      <h3>{{'待完成事项，当前日期'+getNowString()}}</h3>
-      <el-button type="primary" class="add" @click="onClickAdd">添加</el-button>
-      <el-button type="primary" class="add" @click="onClickSelectDate">选择日期</el-button>
-      <el-button type="primary" class="add" @click="onClickUncompletedAll">全部</el-button>
-      <el-button type="primary" class="add" @click="item.onClickUncompletedFun" v-for="item in option">
-        {{ item.label }}
-      </el-button>
-      <div class="items">
-        <div v-for="item in uncompletedItem" class="item">
-          <span>{{ item.name }}</span>
-          <div class="btns">
-            <el-button type="primary" @click="onClickEdit(item.id,item.name)">编辑</el-button>
-            <el-button type="primary" @click="onClickStatistics(item.id)">完成情况</el-button>
-            <el-button type="primary" @click="onClickComplete(item.id)">完成</el-button>
-            <el-button type="danger" @click="onClickDelete(item.id)">删除</el-button>
+    <div class="calendar-container">
+      <div class="item-container">
+        <div class="left" v-if="active==='left'" >
+          <h3 @click="onClickSelectDate" style="cursor: pointer">{{getNowString()}}</h3>
+<!--          <el-button type="primary" class="add" @click="onClickSelectDate">选择日期</el-button>-->
+<!--          <el-button type="primary" class="add" @click="onClickUncompletedAll">全部</el-button>-->
+<!--          <el-button type="primary" class="add" @click="item.onClickUncompletedFun" v-for="item in option">-->
+<!--            {{ item.label }}-->
+<!--          </el-button>-->
+          <Collapse v-model="activeNames">
+            <CollapseItem title="每天" name="1">
+              <div class="items">
+                <div v-for="item in items.filter(value => value.type===EVERY_DAY)"
+                     :class="{complete:item.completedDate.includes(getNowString())}"
+                     @click="onClickComplete(item.id)"
+                     :key="item.id"
+                     class="item">
+                  <span>{{ item.name }}</span>
+                </div>
+              </div>
+            </CollapseItem>
+            <CollapseItem title="每星期" name="2">
+              <div class="items">
+                <div v-for="item in items.filter(value => value.type===WEEK)" class="item"
+                     :class="{complete:item.completedDate.includes(getNowString())}"
+                     @click="onClickComplete(item.id)"
+                     :key="item.id">
+                  <span>{{ item.name }}</span>
+                </div>
+              </div>
+            </CollapseItem>
+            <CollapseItem title="每个月" name="3">
+              <div class="items">
+                <div v-for="item in items.filter(value => value.type===MONTH)" class="item"
+                     :class="{complete:item.completedDate.includes(getNowString())}"
+                     @click="onClickComplete(item.id)"
+                     :key="item.id">
+                  <span>{{ item.name }}</span>
+                </div>
+              </div>
+            </CollapseItem>
+          </Collapse>
+<!--          <div class="items">-->
+
+<!--            <div v-for="item in uncompletedItem" class="item">-->
+<!--              <span>{{ item.name }}</span>-->
+<!--              <div class="btns">-->
+<!--                <el-button type="primary" @click="onClickEdit(item.id,item.name)">编辑</el-button>-->
+<!--                <el-button type="primary" @click="onClickStatistics(item.id)">完成情况</el-button>-->
+<!--                <el-button type="primary" @click="onClickComplete(item.id)">完成</el-button>-->
+<!--                <el-button type="danger" @click="onClickDelete(item.id)">删除</el-button>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
+        </div>
+        <div class="right" v-else-if="active==='right'">
+          <h3>全部</h3> <el-button type="primary" class="add" @click="onClickAdd">添加</el-button>
+          <div class="items">
+            <div v-for="item in items" class="item">
+              <RouterLink :to="{name:'plan-detail',query:{id:item.id}}">{{ item.name }}</RouterLink>
+
+<!--              <div class="btns">-->
+<!--                <el-button type="primary" @click="onClickStatistics(item.id)">完成情况</el-button>-->
+<!--                <el-button type="primary" @click="onClickRecover(item.id)">恢复</el-button>-->
+<!--                <el-button type="danger" @click="onClickDelete(item.id)">删除</el-button>-->
+<!--              </div>-->
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <div class="right">
-      <h3>已完成</h3>
-      <el-button type="primary" class="add" @click="onClickCompletedAll">全部</el-button>
-      <el-button type="primary" class="add" @click="item.onClickCompletedFun" v-for="item in option">
-        {{ item.label }}
-      </el-button>
-      <div class="items">
-        <div v-for="item in completedItem" class="item">
-          <span>{{ item.name }}</span>
-          <span>{{ item.commentObj[getNowString()] }}</span>
-          <div class="btns">
-            <el-button type="primary" @click="onClickStatistics(item.id)">完成情况</el-button>
-            <el-button type="primary" @click="onClickRecover(item.id)">恢复</el-button>
-            <el-button type="danger" @click="onClickDelete(item.id)">删除</el-button>
-          </div>
-        </div>
-      </div>
+      <Tabbar v-model="active">
+        <TabbarItem name="left" icon="home-o">未完成</TabbarItem>
+        <TabbarItem name='right' icon="search">已完成</TabbarItem>
+      </Tabbar>
     </div>
   </div>
   <div class="calendar">
     <el-dialog v-model="dialogFormVisible" title="事项" width="500">
       <el-form :model="form" ref="refForm">
-        <el-form-item label="事项名" :label-width="formLabelWidth" >
+        <el-form-item label="事项名" :label-width="formLabelWidth">
           <el-input v-model="form.name" autocomplete="off"/>
         </el-form-item>
         <el-form-item label="事项重复周期" :label-width="formLabelWidth">
@@ -68,7 +105,8 @@
 
     <el-dialog class="test" v-model="dialogStatisticsVisible" title="统计" top="50px">
       <el-calendar :key="calendarKey">
-        <template #date-cell="{ data }">
+
+        <template #date-cell="{ data }:{data:{type: 'prev-month' | 'current-month' | 'next-month',  isSelected: boolean,  day: string,  Date: Date}}">
           <p :class="data.isSelected ? 'is-selected' : ''">
             {{ data.day.split('-').slice(1).join('-') }}
           </p>
@@ -113,8 +151,8 @@
 
     <el-dialog v-model="dialogCompleteRecordVisible" title="完成记录" width="500">
       <el-form>
-        <el-form-item >
-<!--          <el-input v-model="completeRecord" autocomplete="off"/>-->
+        <el-form-item>
+          <!--          <el-input v-model="completeRecord" autocomplete="off"/>-->
           <el-input v-model="completeRecord" type="textarea" rows="10"/>
         </el-form-item>
       </el-form>
@@ -128,14 +166,16 @@
       </template>
     </el-dialog>
   </div>
+
 </template>
 <script lang="ts" setup>
-import {onMounted, reactive, ref, UnwrapRef} from 'vue';
+import {onMounted, reactive, ref} from 'vue';
 import type {FormInstance} from 'element-plus'
 import moment from "moment";
 import axios from "axios";
 import {ElMessage} from "element-plus";
-
+import { Tabbar, TabbarItem } from 'vant';
+import { Collapse, CollapseItem } from 'vant';
 type Item = {
   id: number,
   name: string,
@@ -143,7 +183,7 @@ type Item = {
   type: string,
   startDate: string,
   endDate: string,
-  commentObj:{[key:string]:string},
+  commentObj: { [key: string]: string },
 }
 const EVERY_DAY = "everyDay"
 const WEEK = "week"
@@ -201,7 +241,7 @@ const option = [
     },
   },
 ]
-let items: Item[] = []
+let items =  reactive<Item[]>([])
 const dialogFormVisible = ref(false)
 const dialogStatisticsVisible = ref(false)
 const dialogDateSelect = ref(false)
@@ -210,17 +250,27 @@ const dialogCompleteRecordVisible = ref(false)
 const selectedDate = ref(new Date())
 const refForm = ref<FormInstance>()
 const calendarKey = ref(0)
+const active = ref('right')
 const completeRecord = ref('')
+const activeNames = ref(['1','2','3']);
 let form = reactive({
   name: '',
   date: EVERY_DAY,
   startDate: new Date(),
   endDate: new Date(),
 })
+
 const uncompletedItem = ref<Item[]>([])
 const completedItem = ref<Item[]>([])
 let statisticsItem = ref<Item>();
 let editId = 0
+const  removeFirstOccurrence = (arr: Array<string>, value: string)=>{
+  const index = arr.indexOf(value);
+  if (index > -1) {
+    arr.splice(index, 1);
+  }
+  return arr;
+}
 const updateAndSave = async () => {
   await window.postForm({
     dest: 'd:/',
@@ -249,6 +299,7 @@ function getFormattedDatesInMonth() {
 
   return dates;
 }
+
 function getFormattedWeekDates() {
   const date = new Date(currentSelectedDate)
   const dayOfWeek = date.getDay();
@@ -268,12 +319,34 @@ function getFormattedWeekDates() {
 
   return weekDates;
 }
+
 const onClickAdd = () => {
   Object.assign(form, {name: "", date: EVERY_DAY, startDate: new Date(), endDate: new Date()})
   dialogFormVisible.value = true
 }
-const onClickSelectDate = ()=>{
+// 选择日期----------------------------------------------------
+const onClickSelectDate = () => {
   dialogDateSelect.value = true
+}
+const dialogDateSelectConfirm = () => {
+  const timestamp = new Date(selectedDate.value).getTime()
+  console.log(timestamp);
+  console.log(selectedDate.value);
+  moment(selectedDate.value)
+
+  // if (timestamp > Date.now()) {
+  //   ElMessage.error('请选择之前的日期')
+  //   return
+  // }
+  currentSelectedDate = timestamp
+  // uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
+  // completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
+  // Object.assign(items,items)
+  const pop = items.pop()
+  if (pop){
+    items.push(pop)
+  }
+  dialogDateSelect.value = false
 }
 const onClickUncompletedAll = () => {
   uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
@@ -292,7 +365,7 @@ const onClickConfirm = () => {
     type: form.date,
     startDate: moment(form.startDate).format('YYYY-MM-DD'),
     endDate: "",
-    commentObj:{},
+    commentObj: {},
   }
   if (form.date === EVERY_DAY) {
 
@@ -308,18 +381,23 @@ const onClickConfirm = () => {
   updateAndSave()
 }
 
-const onClickEdit = (id: number, name: string)=>{
+const onClickEdit = (id: number, name: string) => {
   editId = id
   form.name = name
   dialogEditVisible.value = true
 }
 // 点击完成
 const onClickComplete = (id: number) => {
+  const el = items.find(value => value.id===id) as Item
+  if (el.completedDate.includes(getNowString())){
+    onClickRecover(id)
+    return
+  }
   dialogCompleteRecordVisible.value = true
   editId = id
 }
 // 点击完成弹出的对话框点确定
-const onClickCompleteRecordConfirm = ()=>{
+const onClickCompleteRecordConfirm = () => {
   let el = items[0];
   for (let i = 0; i < items.length; i++) {
     if (items[i].id === editId) {
@@ -330,24 +408,23 @@ const onClickCompleteRecordConfirm = ()=>{
 
   if (el.type === EVERY_DAY) {
     el.completedDate.push(getNowString())
-    el.commentObj[getNowString()] = completeRecord.value
+
   } else if (el.type === WEEK) {
     const array = getFormattedWeekDates()
     for (let i = 0; i < array.length; i++) {
       el.completedDate.push(array[i])
-      el.commentObj[array[i]] = completeRecord.value
+      // el.commentObj[array[i]] = completeRecord.value
     }
   } else if (el.type === MONTH) {
     const array = getFormattedDatesInMonth()
     for (let i = 0; i < array.length; i++) {
       el.completedDate.push(array[i])
-      el.commentObj[array[i]] = completeRecord.value
+      // el.commentObj[array[i]] = completeRecord.value
     }
   } else if (el.type === ONE_DAY) {
 
   }
-
-  console.log(items)
+  el.commentObj[getNowString()] = completeRecord.value
   updateAndSave()
   editId = 0
   dialogCompleteRecordVisible.value = false
@@ -361,13 +438,7 @@ const onClickDelete = (id: number) => {
 }
 // 点击恢复
 const onClickRecover = (id: number) => {
-  function removeFirstOccurrence(arr:Array<string>, value:string) {
-    const index = arr.indexOf(value);
-    if (index > -1) {
-      arr.splice(index, 1);
-    }
-    return arr;
-  }
+
 
   let el = items[0];
   for (let i = 0; i < items.length; i++) {
@@ -379,46 +450,33 @@ const onClickRecover = (id: number) => {
 
 
   if (el.type === EVERY_DAY) {
-    removeFirstOccurrence(el.completedDate,getNowString())
-    el.commentObj[getNowString()] = ''
+    removeFirstOccurrence(el.completedDate, getNowString())
+
   } else if (el.type === WEEK) {
     const array = getFormattedWeekDates()
     for (let i = 0; i < array.length; i++) {
-      removeFirstOccurrence(el.completedDate,array[i])
-      el.commentObj[array[i]] = ''
+      removeFirstOccurrence(el.completedDate, array[i])
+      // delete el.commentObj[array[i]]
     }
   } else if (el.type === MONTH) {
     const array = getFormattedDatesInMonth()
     for (let i = 0; i < array.length; i++) {
-      removeFirstOccurrence(el.completedDate,array[i])
-      el.commentObj[array[i]] = ''
+      removeFirstOccurrence(el.completedDate, array[i])
+      // delete el.commentObj[array[i]]
     }
   } else if (el.type === ONE_DAY) {
 
   }
+  delete el.commentObj[getNowString()]
   console.log(items)
   updateAndSave()
 }
 // 选择日期对话框点确定
-const dialogDateSelectConfirm = () => {
-  const timestamp = new Date(selectedDate.value).getTime()
-  console.log(timestamp);
-  console.log(selectedDate.value);
-  moment(selectedDate.value)
 
-  if (timestamp>Date.now()){
-    ElMessage.error('请选择之前的日期')
-    return
-  }
-  currentSelectedDate = timestamp
-  uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
-  completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
-  dialogDateSelect.value = false
-}
 // 点击确定编辑按钮
-const onClickConfirmEdit = ()=>{
+const onClickConfirmEdit = () => {
   for (let i = 0; i < items.length; i++) {
-    if (items[i].id === editId){
+    if (items[i].id === editId) {
       items[i].name = form.name
       break
     }
@@ -439,15 +497,15 @@ const onClickStatistics = (id: number) => {
 const render = (day: string) => {
   const now = Date.now()
   const timeStamp = new Date(day).getTime() - 8 * 60 * 60 * 1000
-  const startDate = new Date(statisticsItem.value!.startDate).getTime()  - 8 * 60 * 60 * 1000
+  const startDate = new Date(statisticsItem.value!.startDate).getTime() - 8 * 60 * 60 * 1000
   console.log(timeStamp < startDate || timeStamp > now)
-  console.log('timeStamp:',timeStamp )
-  console.log('startDate:',startDate )
-  console.log('now      :' ,now)
-  if (statisticsItem.value!.completedDate.includes(day)){
+  console.log('timeStamp:', timeStamp)
+  console.log('startDate:', startDate)
+  console.log('now      :', now)
+  if (statisticsItem.value!.completedDate.includes(day)) {
     return '✔️'
   }
-  if ( timeStamp < startDate || timeStamp > now) {
+  if (timeStamp < startDate || timeStamp > now) {
     return ''
   }
   return '✘'
@@ -461,12 +519,14 @@ onMounted(async () => {
     responseType: "text"
   })
   if (res.data) {
-    items = JSON.parse(res.data)
+    Object.assign(items,JSON.parse(res.data))
     for (let i = 0; i < items.length; i++) {
-      if (!items[i].commentObj){
+      if (!items[i].commentObj) {
         items[i].commentObj = {}
       }
     }
+
+
     uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
     completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
   }
@@ -477,41 +537,63 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .container {
-  display: flex;
-  flex-direction: row;
   height: 100%;
-  overflow-y: hidden;
-
-  & > div {
-    border: #cccccc solid 1px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  .calendar-container{
     flex: 1;
-    margin: 5px;
-    overflow: auto;
-  }
+    position: relative;
+    max-width: 1025px;
+    height: 100%;
+    .item-container{
+      height:calc(100% - var(--van-tabbar-height));
+      border-bottom-color: #a8abb2;
+      overflow: auto;
+      .left,.right {
+        border: #cccccc solid 1px;
+        padding: 5px;
+        overflow: auto;
+        height: 100%;
+      }
 
-  h3 {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 5px;
-  }
+      h3 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 5px;
+      }
 
-  .add {
-    margin: 5px 0 5px 5px;
-  }
+      .add {
+        margin: 5px 0 5px 5px;
+      }
 
-  .items {
-    .item {
-      border: #cccccc 1px solid;
-      padding: 20px;
-      border-radius: 50px;
-      margin: 0 5px 5px 5px;
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
+      .items {
+        display: grid;
+        grid-template-columns: repeat(auto-fill ,minmax(120px,1fr));
+        .item {
+          cursor: pointer;
+          border: #cccccc 1px solid;
+          padding: 20px;
+          border-radius: 50px;
+          margin: 0 5px 5px 5px;
+        }
+        .complete{
+          background-color: rgb(209.4, 236.7, 195.9);
+        }
+      }
     }
+    .van-tabbar{
+      border-top-color: red;
+      position: absolute;
+      max-width: 1025px;
+    }
+
   }
+
+
 }
+
 .text-center {
   display: flex;
   justify-content: center;
@@ -519,11 +601,26 @@ onMounted(async () => {
 }
 </style>
 <style lang="scss">
-.calendar{
+.calendar {
+  .el-input {
+    width: 250px !important;
+  }
+  .el-dialog{
+    width: 80%;
+    max-width: 500px;
+  }
+}
+.container{
 
-    .el-input{
-      width: 250px !important;
-    }
-
+  //.el-tabs{
+  //  height: 100%;
+  //  .el-tabs__content {
+  //    height: calc(100% - var(--el-tabs-header-height) - 15px);
+  //    .el-tab-pane{
+  //      height: 100%;
+  //      overflow: scroll;
+  //    }
+  //  }
+  //}
 }
 </style>

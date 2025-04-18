@@ -19,7 +19,17 @@ type DirectoryListItem = {
     lastModified:number,
     path?:string,
 }
+type Item = {
+    id: number,
+    name: string,
+    completedDate: string[]
+    type: string,
+    startDate: string,
+    endDate: string,
+    commentObj: { [key: string]: string },
+}
 export {
     MyResponse,
-    DirectoryListItem
+    DirectoryListItem,
+    Item,
 }

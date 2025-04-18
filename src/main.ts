@@ -1,6 +1,7 @@
 import {createApp} from "vue"
 import {createPinia} from "pinia"
 import "./assets/main.css"
+import 'vant/lib/index.css';
 import router from "./assets/route"
 import App from "./App.vue"
 import axios from "axios"

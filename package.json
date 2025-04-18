@@ -20,6 +20,7 @@
     "jsonwebtoken": "^9.0.0",
     "moment": "^2.29.4",
     "pinia": "^2.0.29",
+    "vant": "^4.9.19",
     "video.js": "^8.0.4",
     "vue": "^3.2.45",
     "vue-router": "^4.1.6"
