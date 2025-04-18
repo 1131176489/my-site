@@ -30,6 +30,7 @@
       <div class="items">
         <div v-for="item in completedItem" class="item">
           <span>{{ item.name }}</span>
+          <span>{{ item.commentObj[getNowString()] }}</span>
           <div class="btns">
             <el-button type="primary" @click="onClickStatistics(item.id)">完成情况</el-button>
             <el-button type="primary" @click="onClickRecover(item.id)">恢复</el-button>
@@ -104,6 +105,23 @@
         <div class="dialog-footer">
           <el-button @click="dialogEditVisible = false">取消</el-button>
           <el-button type="primary" @click="onClickConfirmEdit">
+            确定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="dialogCompleteRecordVisible" title="完成记录" width="500">
+      <el-form>
+        <el-form-item >
+<!--          <el-input v-model="completeRecord" autocomplete="off"/>-->
+          <el-input v-model="completeRecord" type="textarea" rows="10"/>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogCompleteRecordVisible = false">取消</el-button>
+          <el-button type="primary" @click="onClickCompleteRecordConfirm">
             确定
           </el-button>
         </div>
@@ -188,9 +206,11 @@ const dialogFormVisible = ref(false)
 const dialogStatisticsVisible = ref(false)
 const dialogDateSelect = ref(false)
 const dialogEditVisible = ref(false)
+const dialogCompleteRecordVisible = ref(false)
 const selectedDate = ref(new Date())
 const refForm = ref<FormInstance>()
 const calendarKey = ref(0)
+const completeRecord = ref('')
 let form = reactive({
   name: '',
   date: EVERY_DAY,
@@ -272,6 +292,7 @@ const onClickConfirm = () => {
     type: form.date,
     startDate: moment(form.startDate).format('YYYY-MM-DD'),
     endDate: "",
+    commentObj:{},
   }
   if (form.date === EVERY_DAY) {
 
@@ -292,10 +313,16 @@ const onClickEdit = (id: number, name: string)=>{
   form.name = name
   dialogEditVisible.value = true
 }
+// 点击完成
 const onClickComplete = (id: number) => {
+  dialogCompleteRecordVisible.value = true
+  editId = id
+}
+// 点击完成弹出的对话框点确定
+const onClickCompleteRecordConfirm = ()=>{
   let el = items[0];
   for (let i = 0; i < items.length; i++) {
-    if (items[i].id === id) {
+    if (items[i].id === editId) {
       el = items[i]
       break
     }
@@ -303,29 +330,36 @@ const onClickComplete = (id: number) => {
 
   if (el.type === EVERY_DAY) {
     el.completedDate.push(getNowString())
+    el.commentObj[getNowString()] = completeRecord.value
   } else if (el.type === WEEK) {
     const array = getFormattedWeekDates()
     for (let i = 0; i < array.length; i++) {
       el.completedDate.push(array[i])
+      el.commentObj[array[i]] = completeRecord.value
     }
   } else if (el.type === MONTH) {
     const array = getFormattedDatesInMonth()
     for (let i = 0; i < array.length; i++) {
       el.completedDate.push(array[i])
+      el.commentObj[array[i]] = completeRecord.value
     }
   } else if (el.type === ONE_DAY) {
 
   }
+
   console.log(items)
   updateAndSave()
+  editId = 0
+  dialogCompleteRecordVisible.value = false
 }
-
+// 点击删除一个计划
 const onClickDelete = (id: number) => {
   const index = items.findIndex(value => value.id === id)
   items.splice(index, 1)
   console.log(items)
   updateAndSave()
 }
+// 点击恢复
 const onClickRecover = (id: number) => {
   function removeFirstOccurrence(arr:Array<string>, value:string) {
     const index = arr.indexOf(value);
@@ -346,15 +380,18 @@ const onClickRecover = (id: number) => {
 
   if (el.type === EVERY_DAY) {
     removeFirstOccurrence(el.completedDate,getNowString())
+    el.commentObj[getNowString()] = ''
   } else if (el.type === WEEK) {
     const array = getFormattedWeekDates()
     for (let i = 0; i < array.length; i++) {
       removeFirstOccurrence(el.completedDate,array[i])
+      el.commentObj[array[i]] = ''
     }
   } else if (el.type === MONTH) {
     const array = getFormattedDatesInMonth()
     for (let i = 0; i < array.length; i++) {
       removeFirstOccurrence(el.completedDate,array[i])
+      el.commentObj[array[i]] = ''
     }
   } else if (el.type === ONE_DAY) {
 
@@ -362,7 +399,7 @@ const onClickRecover = (id: number) => {
   console.log(items)
   updateAndSave()
 }
-
+// 选择日期对话框点确定
 const dialogDateSelectConfirm = () => {
   const timestamp = new Date(selectedDate.value).getTime()
   console.log(timestamp);
@@ -378,7 +415,7 @@ const dialogDateSelectConfirm = () => {
   completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
   dialogDateSelect.value = false
 }
-
+// 点击确定编辑按钮
 const onClickConfirmEdit = ()=>{
   for (let i = 0; i < items.length; i++) {
     if (items[i].id === editId){
@@ -391,7 +428,7 @@ const onClickConfirmEdit = ()=>{
   updateAndSave()
   dialogEditVisible.value = false
 }
-// 点击完成按钮
+// 点击统计按钮
 const onClickStatistics = (id: number) => {
   calendarKey.value++
   statisticsItem.value = items.find(value => value.id === id) as Item
@@ -425,6 +462,11 @@ onMounted(async () => {
   })
   if (res.data) {
     items = JSON.parse(res.data)
+    for (let i = 0; i < items.length; i++) {
+      if (!items[i].commentObj){
+        items[i].commentObj = {}
+      }
+    }
     uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
     completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
   }
