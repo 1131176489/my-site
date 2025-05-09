@@ -23,10 +23,12 @@ type Item = {
     id: number,
     name: string,
     completedDate: string[]
+    checkInDate: string[]
     type: string,
     startDate: string,
     endDate: string,
     commentObj: { [key: string]: string },
+    isArchive:boolean,
 }
 export {
     MyResponse,

@@ -50,10 +50,19 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import moment from "moment";
+interface Props {
+  myProp: string;
+  highlightDate:string[]
+}
 const currentDate = ref(new Date());
 const showYearPicker = ref(false);
 const yearRange = ref(Math.floor(currentDate.value.getFullYear() / 10) * 10);
-const props = defineProps(['highlight-date'])
+const props = defineProps({
+  highlightDate:{
+    type: Array,
+    required:true,
+  }
+})
 console.log(props["highlightDate"]);
 const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
 

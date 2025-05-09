@@ -57,23 +57,28 @@
 <!--          </div>-->
         </div>
         <div class="right" v-else-if="active==='right'">
-          <h3>全部</h3> <el-button type="primary" class="add" @click="onClickAdd">添加</el-button>
+          <h3>全部</h3>
+          <el-button type="primary" class="add" @click="onClickAdd">添加</el-button>
           <div class="items">
             <div v-for="item in items" class="item">
-              <RouterLink :to="{name:'plan-detail',query:{id:item.id}}">{{ item.name }}</RouterLink>
+              <RouterLink  :to="{name:'plan-detail',query:{id:item.id}}">{{ item.name }}</RouterLink>
 
-<!--              <div class="btns">-->
-<!--                <el-button type="primary" @click="onClickStatistics(item.id)">完成情况</el-button>-->
-<!--                <el-button type="primary" @click="onClickRecover(item.id)">恢复</el-button>-->
-<!--                <el-button type="danger" @click="onClickDelete(item.id)">删除</el-button>-->
-<!--              </div>-->
+              <div class="btns">
+                <el-button type="primary" @click="onClickEdit(item.id,item.name)">编辑</el-button>
+                <el-button type="danger" @click="onClickDelete(item.id)">删除</el-button>
+              </div>
             </div>
           </div>
         </div>
+        <div class="other" v-else-if="active==='other'">
+          <RouterLink :to={}  >归档习惯</RouterLink>
+          <RouterLink :to={}  >数据概览</RouterLink>
+        </div>
       </div>
       <Tabbar v-model="active">
-        <TabbarItem name="left" icon="home-o">未完成</TabbarItem>
-        <TabbarItem name='right' icon="search">已完成</TabbarItem>
+        <TabbarItem name="left" @click="onClickTabbarItem" icon="home-o">未完成</TabbarItem>
+        <TabbarItem name='right' @click="onClickTabbarItem" icon="search">已完成</TabbarItem>
+        <TabbarItem name='other' @click="onClickTabbarItem" icon="search">其他功能</TabbarItem>
       </Tabbar>
     </div>
   </div>
@@ -103,20 +108,6 @@
       </template>
     </el-dialog>
 
-    <el-dialog class="test" v-model="dialogStatisticsVisible" title="统计" top="50px">
-      <el-calendar :key="calendarKey">
-
-        <template #date-cell="{ data }:{data:{type: 'prev-month' | 'current-month' | 'next-month',  isSelected: boolean,  day: string,  Date: Date}}">
-          <p :class="data.isSelected ? 'is-selected' : ''">
-            {{ data.day.split('-').slice(1).join('-') }}
-          </p>
-          <p>
-            {{ render(data.day) }}
-          </p>
-        </template>
-      </el-calendar>
-    </el-dialog>
-
     <el-dialog v-model="dialogDateSelect" title="选择日期" width="500">
       <el-date-picker
           v-model="selectedDate"
@@ -127,22 +118,6 @@
         <div class="dialog-footer">
           <el-button @click="dialogDateSelect = false">取消</el-button>
           <el-button type="primary" @click="dialogDateSelectConfirm">
-            确定
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
-
-    <el-dialog v-model="dialogEditVisible" title="编辑" width="500">
-      <el-form :model="form" ref="refForm">
-        <el-form-item label="事项名" :label-width="formLabelWidth">
-          <el-input v-model="form.name" autocomplete="off"/>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="dialogEditVisible = false">取消</el-button>
-          <el-button type="primary" @click="onClickConfirmEdit">
             确定
           </el-button>
         </div>
@@ -173,23 +148,15 @@ import {onMounted, reactive, ref} from 'vue';
 import type {FormInstance} from 'element-plus'
 import moment from "moment";
 import axios from "axios";
-import {ElMessage} from "element-plus";
 import { Tabbar, TabbarItem } from 'vant';
 import { Collapse, CollapseItem } from 'vant';
-type Item = {
-  id: number,
-  name: string,
-  completedDate: string[]
-  type: string,
-  startDate: string,
-  endDate: string,
-  commentObj: { [key: string]: string },
-}
+import { showConfirmDialog } from 'vant';
+import type {Item} from "../declare";
+import {EVERY_DAY_PATH} from "../assets/CONSTANT";
 const EVERY_DAY = "everyDay"
 const WEEK = "week"
 const MONTH = "month"
 const ONE_DAY = "oneDay"
-const jsonPath = "d:/everyday.json"
 const formLabelWidth = '140px'
 let currentSelectedDate = Date.now()
 const getNowString = () => {
@@ -200,57 +167,31 @@ const option = [
     key: EVERY_DAY,
     value: EVERY_DAY,
     label: "每天",
-    onClickUncompletedFun: () => {
-      uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString())).filter(value => value.type === EVERY_DAY)
-    },
-    onClickCompletedFun: () => {
-      completedItem.value = items.filter(value => value.completedDate.includes(getNowString())).filter(value => value.type === EVERY_DAY)
-    },
   },
   {
     key: WEEK,
     value: WEEK,
     label: "每个星期",
-    onClickUncompletedFun: () => {
-      uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString())).filter(value => value.type === WEEK)
-    },
-    onClickCompletedFun: () => {
-      completedItem.value = items.filter(value => value.completedDate.includes(getNowString())).filter(value => value.type === WEEK)
-    },
   },
   {
     key: MONTH,
     value: MONTH,
     label: "每个月",
-    onClickUncompletedFun: () => {
-      uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString())).filter(value => value.type === MONTH)
-    },
-    onClickCompletedFun: () => {
-      completedItem.value = items.filter(value => value.completedDate.includes(getNowString())).filter(value => value.type === MONTH)
-    },
   },
   {
     key: ONE_DAY,
     value: ONE_DAY,
     label: "具体某天",
-    onClickUncompletedFun: () => {
-      uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString())).filter(value => value.type === ONE_DAY)
-    },
-    onClickCompletedFun: () => {
-      completedItem.value = items.filter(value => value.completedDate.includes(getNowString())).filter(value => value.type === ONE_DAY)
-    },
   },
 ]
 let items =  reactive<Item[]>([])
 const dialogFormVisible = ref(false)
-const dialogStatisticsVisible = ref(false)
 const dialogDateSelect = ref(false)
 const dialogEditVisible = ref(false)
 const dialogCompleteRecordVisible = ref(false)
 const selectedDate = ref(new Date())
 const refForm = ref<FormInstance>()
-const calendarKey = ref(0)
-const active = ref('right')
+const active = ref('left')
 const completeRecord = ref('')
 const activeNames = ref(['1','2','3']);
 let form = reactive({
@@ -259,11 +200,10 @@ let form = reactive({
   startDate: new Date(),
   endDate: new Date(),
 })
-
-const uncompletedItem = ref<Item[]>([])
-const completedItem = ref<Item[]>([])
-let statisticsItem = ref<Item>();
 let editId = 0
+const onClickTabbarItem = ()=>{
+  localStorage.setItem('active',active.value)
+}
 const  removeFirstOccurrence = (arr: Array<string>, value: string)=>{
   const index = arr.indexOf(value);
   if (index > -1) {
@@ -277,8 +217,6 @@ const updateAndSave = async () => {
     filename: "everyday.json",
     blob: JSON.stringify(items)
   })
-  uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
-  completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
 }
 function getFormattedDatesInMonth() {
   const date = new Date(currentSelectedDate)
@@ -348,12 +286,12 @@ const dialogDateSelectConfirm = () => {
   }
   dialogDateSelect.value = false
 }
-const onClickUncompletedAll = () => {
-  uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
-}
-const onClickCompletedAll = () => {
-  completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
-}
+// const onClickUncompletedAll = () => {
+//   uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
+// }
+// const onClickCompletedAll = () => {
+//   completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
+// }
 
 const onClickConfirm = () => {
   dialogFormVisible.value = false
@@ -362,10 +300,12 @@ const onClickConfirm = () => {
     id: Date.now(),
     name: form.name,
     completedDate: [],
+    checkInDate:[],
     type: form.date,
     startDate: moment(form.startDate).format('YYYY-MM-DD'),
     endDate: "",
     commentObj: {},
+    isArchive:false,
   }
   if (form.date === EVERY_DAY) {
 
@@ -408,22 +348,20 @@ const onClickCompleteRecordConfirm = () => {
 
   if (el.type === EVERY_DAY) {
     el.completedDate.push(getNowString())
-
   } else if (el.type === WEEK) {
     const array = getFormattedWeekDates()
     for (let i = 0; i < array.length; i++) {
       el.completedDate.push(array[i])
-      // el.commentObj[array[i]] = completeRecord.value
     }
   } else if (el.type === MONTH) {
     const array = getFormattedDatesInMonth()
     for (let i = 0; i < array.length; i++) {
       el.completedDate.push(array[i])
-      // el.commentObj[array[i]] = completeRecord.value
     }
   } else if (el.type === ONE_DAY) {
 
   }
+  el.checkInDate.push(getNowString())
   el.commentObj[getNowString()] = completeRecord.value
   updateAndSave()
   editId = 0
@@ -431,15 +369,21 @@ const onClickCompleteRecordConfirm = () => {
 }
 // 点击删除一个计划
 const onClickDelete = (id: number) => {
-  const index = items.findIndex(value => value.id === id)
-  items.splice(index, 1)
-  console.log(items)
-  updateAndSave()
+  showConfirmDialog({
+    title: '提示',
+    message: '是否要删除这条计划？',
+  }).then(() => {
+    const index = items.findIndex(value => value.id === id)
+    items.splice(index, 1)
+    console.log(items)
+    updateAndSave()
+  }).catch(() => {
+
+  });
+
 }
 // 点击恢复
 const onClickRecover = (id: number) => {
-
-
   let el = items[0];
   for (let i = 0; i < items.length; i++) {
     if (items[i].id === id) {
@@ -448,88 +392,37 @@ const onClickRecover = (id: number) => {
     }
   }
 
-
   if (el.type === EVERY_DAY) {
     removeFirstOccurrence(el.completedDate, getNowString())
-
   } else if (el.type === WEEK) {
     const array = getFormattedWeekDates()
     for (let i = 0; i < array.length; i++) {
       removeFirstOccurrence(el.completedDate, array[i])
-      // delete el.commentObj[array[i]]
     }
   } else if (el.type === MONTH) {
     const array = getFormattedDatesInMonth()
     for (let i = 0; i < array.length; i++) {
       removeFirstOccurrence(el.completedDate, array[i])
-      // delete el.commentObj[array[i]]
     }
   } else if (el.type === ONE_DAY) {
-
   }
+  removeFirstOccurrence(el.checkInDate,getNowString())
   delete el.commentObj[getNowString()]
   console.log(items)
   updateAndSave()
 }
-// 选择日期对话框点确定
-
-// 点击确定编辑按钮
-const onClickConfirmEdit = () => {
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].id === editId) {
-      items[i].name = form.name
-      break
-    }
-  }
-  form.name = ''
-  editId = 0
-  updateAndSave()
-  dialogEditVisible.value = false
-}
-// 点击统计按钮
-const onClickStatistics = (id: number) => {
-  calendarKey.value++
-  statisticsItem.value = items.find(value => value.id === id) as Item
-  console.log(statisticsItem.value)
-  dialogStatisticsVisible.value = true
-}
-// 日历渲染函数
-const render = (day: string) => {
-  const now = Date.now()
-  const timeStamp = new Date(day).getTime() - 8 * 60 * 60 * 1000
-  const startDate = new Date(statisticsItem.value!.startDate).getTime() - 8 * 60 * 60 * 1000
-  console.log(timeStamp < startDate || timeStamp > now)
-  console.log('timeStamp:', timeStamp)
-  console.log('startDate:', startDate)
-  console.log('now      :', now)
-  if (statisticsItem.value!.completedDate.includes(day)) {
-    return '✔️'
-  }
-  if (timeStamp < startDate || timeStamp > now) {
-    return ''
-  }
-  return '✘'
-}
-
 onMounted(async () => {
   const res = await axios.get("/file/getFileByAbsolutePath", {
     params: {
-      path: jsonPath
+      path: EVERY_DAY_PATH
     },
     responseType: "text"
   })
   if (res.data) {
-    Object.assign(items,JSON.parse(res.data))
-    for (let i = 0; i < items.length; i++) {
-      if (!items[i].commentObj) {
-        items[i].commentObj = {}
-      }
-    }
-
-
-    uncompletedItem.value = items.filter(value => !value.completedDate.includes(getNowString()))
-    completedItem.value = items.filter(value => value.completedDate.includes(getNowString()))
+    const array = JSON.parse(res.data) as Item[]
+    Object.assign(items,array.filter(value => !value.isArchive))
   }
+  active.value = (localStorage.getItem('active')?localStorage.getItem('active'):'left') as string
 })
 
 
@@ -546,40 +439,76 @@ onMounted(async () => {
     position: relative;
     max-width: 1025px;
     height: 100%;
+    border: #cccccc solid 1px;
     .item-container{
       height:calc(100% - var(--van-tabbar-height));
       border-bottom-color: #a8abb2;
       overflow: auto;
       .left,.right {
-        border: #cccccc solid 1px;
         padding: 5px;
         overflow: auto;
         height: 100%;
       }
+      .left{
+        .items {
+          display: grid;
+          grid-template-columns: repeat(auto-fill ,minmax(120px,1fr));
+          .item {
+            cursor: pointer;
+            border: #cccccc 1px solid;
+            padding: 20px;
+            border-radius: 50px;
+            margin: 0 5px 5px 5px;
+          }
+          .complete{
+            background-color: rgb(209.4, 236.7, 195.9);
+          }
+        }
+      }
+      .right{
+        position: relative;
+        .items {
+          display: flex;
+          flex-direction: column;
+          .item {
+            position: relative;
+            cursor: pointer;
+            border: #cccccc 1px solid;
+            padding: 20px;
+            border-radius: 50px;
+            margin: 0 5px 5px 5px;
+            .btns{
+              position: absolute;
+              right: 20px;
+              top: 50%;
+              transform: translateY(-50%);           /* 仅 Y 轴 */
+            }
+          }
+          .complete{
+            background-color: rgb(209.4, 236.7, 195.9);
+          }
+        }
+        h3 {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 5px;
+        }
+        .add {
+          margin: 5px 0 5px 5px;
+          position: absolute;
+          right: 0;
+          top: 0;
+        }
 
-      h3 {
+      }
+      .other{
         display: flex;
         align-items: center;
-        justify-content: center;
-        margin-bottom: 5px;
-      }
-
-      .add {
-        margin: 5px 0 5px 5px;
-      }
-
-      .items {
-        display: grid;
-        grid-template-columns: repeat(auto-fill ,minmax(120px,1fr));
-        .item {
-          cursor: pointer;
-          border: #cccccc 1px solid;
-          padding: 20px;
-          border-radius: 50px;
-          margin: 0 5px 5px 5px;
-        }
-        .complete{
-          background-color: rgb(209.4, 236.7, 195.9);
+        flex-direction: column;
+        a{
+          text-align: center;
+          margin: 20px 0 0 0 ;
         }
       }
     }
@@ -609,18 +538,5 @@ onMounted(async () => {
     width: 80%;
     max-width: 500px;
   }
-}
-.container{
-
-  //.el-tabs{
-  //  height: 100%;
-  //  .el-tabs__content {
-  //    height: calc(100% - var(--el-tabs-header-height) - 15px);
-  //    .el-tab-pane{
-  //      height: 100%;
-  //      overflow: scroll;
-  //    }
-  //  }
-  //}
 }
 </style>

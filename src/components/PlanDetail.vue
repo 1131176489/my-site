@@ -1,22 +1,29 @@
 <script setup lang="ts">
-import {useRoute} from "vue-router";
-import {onMounted, reactive, ref, computed, onBeforeMount} from "vue";
+import {useRoute,useRouter} from "vue-router";
+import {reactive, ref, computed, onBeforeMount} from "vue";
 import SimpleCalendar from './SimpleCalendar.vue';
 import axios from "axios";
 import type {Item} from "../declare"
+import {Popup, Button, showToast} from 'vant';
+import {EVERY_DAY_PATH} from "../assets/CONSTANT";
 const route = useRoute()
+const router = useRouter()
 const id = parseInt(route.query.id as string)
-const jsonPath = "d:/everyday.json"
 const isCompleted=ref(true)
+const show=ref(false)
+const isArchive=ref(true)
 const item = reactive<Item>({
   id:0,
   completedDate: [],
+  checkInDate:[],
   name:'',
   type:'',
   startDate:'',
   endDate:'',
-  commentObj:{}
+  commentObj:{},
+  isArchive:false,
 })
+const items = reactive<Item[]>([])
 const CheckInDayNumber = computed(()=>{
   // const keys = Object.keys(item.commentObj)
 
@@ -30,26 +37,67 @@ const CheckInDay = computed(()=>{
   }
   return day
 })
+const updateAndSave = async () => {
+  await window.postForm({
+    dest: 'd:/',
+    filename: "everyday.json",
+    blob: JSON.stringify(items)
+  })
+}
+const onClickArchive = async () => {
+  console.log(items)
+  if (isArchive.value){
+    items.find(value => value.id===id)!.isArchive = false
+    await updateAndSave()
+    showToast({
+      message:'激活成功',
+      type:'success',
+    })
+    isArchive.value = false
+  }else {
+    items.find(value => value.id===id)!.isArchive = true
+    await updateAndSave()
+    showToast({
+      message:'归档成功',
+      type:'success',
+    })
+    isArchive.value = true
+  }
+
+}
+const getComment = ()=>{
+  const keys = Object.keys(item.commentObj)
+  return keys.map(value => {
+    return {
+      date:value ,
+      text:item.commentObj[value]
+    }
+  })
+}
+const yearStatistics = ()=>{
+  router.push({
+    name:'YearStatistics',
+    query:{
+      id
+    }
+  })
+}
 onBeforeMount(async () => {
   const res = await axios.get("/file/getFileByAbsolutePath", {
     params: {
-      path: jsonPath
+      path: EVERY_DAY_PATH
     },
     responseType: "text"
   })
   if (res.data) {
-    const items: Item[] = JSON.parse(res.data)
-    // item =  items.find(value => value.id === id)
-    Object.assign(item, items.find(value => value.id === id))
+    const items_: Item[] = JSON.parse(res.data)
+    Object.assign(items, items_)
+    Object.assign(item, items_.find(value => value.id === id))
+    isArchive.value = item.isArchive
     console.log(item)
-    // Object.assign(defaultDate, item.completedDate.map(value => new Date(value)))
-    // defaultDate.value =  item.completedDate.map(value => new Date(value))
-    // console.log(defaultDate)
   }
 })
 
-
-// onMounted()
 </script>
 
 <template>
@@ -68,19 +116,24 @@ onBeforeMount(async () => {
       </div>
       <div class="calendar-container">
         <SimpleCalendar  :highlight-date="isCompleted?item.completedDate:CheckInDay"></SimpleCalendar>
-<!--        <Calendar :show="false"-->
-<!--                  :poppable="false"-->
-<!--                  switch-mode="year-month"-->
-<!--                  :show-mark="false"-->
-<!--                  :show-title="false"-->
-<!--                  :show-confirm="false"-->
-<!--                  :show-subtitle="false"-->
-<!--                  :default-date="defaultDate"-->
-<!--                  type="multiple"-->
-<!--        ></Calendar>-->
       </div>
+      <div class="btns">
+        <Button plain type="primary" @click="yearStatistics">年度统计</Button>
+        <Button plain type="primary" @click="show = true">所有日志</Button>
+        <Button plain type="primary" @click="onClickArchive">{{ isArchive?'激活':'归档' }}</Button>
+        <Button plain type="danger">删除</Button>
+      </div>
+      <Popup v-model:show="show"
+             position="bottom"
+             :style="{ height: '80%' }">
+        <div style="margin: 0 0 10px 0" v-for="comment in getComment()">
+          {{comment.date}}:
+          {{comment.text}}
+        </div>
+      </Popup>
     </div>
   </div>
+
 </template>
 
 <style lang="scss" scoped>
@@ -142,6 +195,11 @@ onBeforeMount(async () => {
           background-color: #a8abb2;
         }
       }
+    }
+
+    .btns{
+      display: flex;
+      justify-content: space-evenly;
     }
   }
 }

@@ -1,0 +1,1 @@
+export const EVERY_DAY_PATH = "d:/everyday.json"

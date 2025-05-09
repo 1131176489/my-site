@@ -16,6 +16,7 @@ import NewVideo2 from "../components/NewVideo2.vue";
 import AnnualFeeCalculation from "../components/AnnualFeeCalculation.vue";
 import SelectDirectory from "../components/SelectDirectory.vue";
 import PlanDetail from "../components/PlanDetail.vue";
+import YearStatistics from "../components/YearStatistics.vue";
 
 const routes: Readonly<RouteRecordRaw[]> = [
     {path: "/", component: Home, name: "Home"},
@@ -32,6 +33,7 @@ const routes: Readonly<RouteRecordRaw[]> = [
         ],
     },
     {path: "/FileDownLoad", component: FileDownLoad, name: "FileDownLoad"},
+    {path: "/yearStatistics", component: YearStatistics, name: "YearStatistics"},
     {path: "/plan-detail", component: PlanDetail, name: "plan-detail"},
     {path: "/NonM3U8Player", component: NonM3U8Player, name: "NonM3U8Player"},
     {path: "/NonM3U8Video", component: NonM3U8Video, name: "NonM3U8Video"},
