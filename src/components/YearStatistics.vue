@@ -38,11 +38,13 @@ const id = parseInt(route.query.id as string)
 const item = reactive<Item>({
   id:0,
   completedDate: [],
+  checkInDate:[],
   name:'',
   type:'',
   startDate:'',
   endDate:'',
-  commentObj:{}
+  commentObj:{},
+  isArchive:false,
 })
 const currentYear = ref(new Date().getFullYear())
 console.log(currentYear.value)

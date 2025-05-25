@@ -25,8 +25,8 @@ const items = [
     name: "视频",
   },
   {
-    componentName:'SelectDirectory',
-    name: "选择文件夹",
+    componentName:'JapaneseWordIndex',
+    name: "日语单词",
   },
 ]
 </script>

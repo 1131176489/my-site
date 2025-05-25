@@ -17,6 +17,8 @@ import AnnualFeeCalculation from "../components/AnnualFeeCalculation.vue";
 import SelectDirectory from "../components/SelectDirectory.vue";
 import PlanDetail from "../components/PlanDetail.vue";
 import YearStatistics from "../components/YearStatistics.vue";
+import JapaneseWordIndex from "../components/JapaneseWordIndex.vue";
+import JapaneseWordDetail from "../components/JapaneseWordDetail.vue";
 
 const routes: Readonly<RouteRecordRaw[]> = [
     {path: "/", component: Home, name: "Home"},
@@ -47,6 +49,8 @@ const routes: Readonly<RouteRecordRaw[]> = [
     {path: "/VideoInfo", component: VideoInfo, name: "VideoInfo"},
     {path: "/yearFee", component: AnnualFeeCalculation, name: "AnnualFeeCalculation"},
     {path: "/SelectDirectory", component: SelectDirectory, name: "SelectDirectory"},
+    {path: "/JapaneseWordIndex", component: JapaneseWordIndex, name: "JapaneseWordIndex"},
+    {path: "/JapaneseWordDetail", component: JapaneseWordDetail, name: "JapaneseWordDetail"},
     {path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound},
 ]
 const router = createRouter({
