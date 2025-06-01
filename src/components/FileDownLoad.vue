@@ -1,15 +1,16 @@
 <template>
   <div class="container">
-    <div v-for="item in renderData" class="item">
+    <div v-for="item in renderData" class="item" @click="onClickDiv(item.isFile,item.path)">
       <div v-if="item.isFile" class="file content" @click="onClickFile(item.path)">
-        {{ item.filename }}
+        <span>{{ item.filename }}</span>
+        <img :src="`/file/getThumbnail?path=${encodeURIComponent(item.path)}`" alt="">
       </div>
       <div class="content directory" v-else @click="onClickDirectory(<string>item.path)">
         {{ item.filename }}
       </div>
     </div>
   </div>
-  <el-dialog v-model="dialogFormVisible" title="选择一个选项" width="500">
+  <el-dialog class="dialog" v-model="dialogFormVisible" title="选择一个选项" width="300">
     <el-form :model="form">
       <el-form-item label="选项" :label-width="formLabelWidth">
         <el-select v-model="form.selected" placeholder="请选择">
@@ -30,7 +31,7 @@
 </template>
 <script setup lang="ts">
 import axios from 'axios';
-import {h, ref} from 'vue';
+import {ref} from 'vue';
 import {DirectoryListItem} from "../declare";
 import {ElOption, ElSelect} from "element-plus";
 
@@ -42,31 +43,31 @@ const form = ref({
   selected: '',
 })
 let currentPath = ""
-const testData: DirectoryListItem[] = (() => {
-  const temp: DirectoryListItem[] = []
-  for (let i = 0; i < 100; i++) {
-    let filename;
-    let isFile;
-    let lastModified;
-    if (i % 2 === 0) {
-      filename = `这是文件_${i}.txt`
-      isFile = true
-      lastModified = Date.now() + i
-    } else {
-      filename = `这是目录_${i}`
-      isFile = false
-      lastModified = Date.now() + i
-    }
-    const item: DirectoryListItem = {
-      filename,
-      isFile,
-      lastModified,
-    }
-    temp.push(item)
-  }
-
-  return temp
-})()
+// const testData: DirectoryListItem[] = (() => {
+//   const temp: DirectoryListItem[] = []
+//   for (let i = 0; i < 100; i++) {
+//     let filename;
+//     let isFile;
+//     let lastModified;
+//     if (i % 2 === 0) {
+//       filename = `这是文件_${i}.txt`
+//       isFile = true
+//       lastModified = Date.now() + i
+//     } else {
+//       filename = `这是目录_${i}`
+//       isFile = false
+//       lastModified = Date.now() + i
+//     }
+//     const item: DirectoryListItem = {
+//       filename,
+//       isFile,
+//       lastModified,
+//     }
+//     temp.push(item)
+//   }
+//
+//   return temp
+// })()
 const initData = [
   {
     isFile: false,
@@ -127,10 +128,19 @@ const onClickDirectory = async (path: string) => {
     path: ""
   })
 }
-const onClickFile = async (path: string |undefined) => {
+const onClickFile = async (path: string | undefined) => {
   dialogFormVisible.value = true
   currentPath = path as string
   console.log(currentPath)
+}
+
+const onClickDiv = async (isFile: boolean, path: string|undefined) => {
+  if (isFile) {
+    onClickFile(path)
+  } else {
+    // @ts-ignore
+    onClickDirectory(path)
+  }
 }
 const onClickFileConfirm = async () => {
   dialogFormVisible.value = false
@@ -152,25 +162,42 @@ const onClickFileConfirm = async () => {
   padding: 20px;
   display: grid;
   //grid-template-columns: 1fr 1fr 1fr;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
 
   .item {
-    height: 100px;
+    height: 200px;
     border: 1px solid black;
 
     .content {
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-      word-break: break-all;
-      overflow: hidden;
-      text-overflow: ellipsis; /* 显示省略号 */
+      position: relative;
+
+      span {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        word-break: break-all;
+        overflow: hidden;
+        text-overflow: ellipsis; /* 显示省略号 */
+      }
+
+      img {
+        max-height: 100%; /* 图片最大宽度不超过容器 */
+        max-width: 100%; /* 图片最大宽度不超过容器 */
+
+        height: auto; /* 高度自动调整，保持宽高比 */
+        width: auto; /* 高度自动调整，保持宽高比 */
+        display: block; /* 避免图片下方的空白间隙 */
+      }
     }
   }
 
 }
-.el-calendar-day{
+
+.el-calendar-day {
   height: 65px !important;
 }
 </style>

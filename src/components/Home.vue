@@ -28,6 +28,10 @@ const items = [
     componentName:'JapaneseWordIndex',
     name: "日语单词",
   },
+  {
+    componentName:'WordCopy',
+    name: "用户名密码",
+  },
 ]
 </script>
 <style lang="scss" scoped>

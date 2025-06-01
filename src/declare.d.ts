@@ -17,7 +17,7 @@ type DirectoryListItem = {
     filename:string,
     isFile:boolean,
     lastModified:number,
-    path?:string,
+    path:string,
 }
 type Item = {
     id: number,
