@@ -13,20 +13,12 @@ import {RouterLink} from "vue-router";
 
 const items = [
   {
-    componentName:'Calendar',
-    name: "日历",
-  },
-  {
     componentName:'FileDownLoad',
     name: "文件下载",
   },
   {
     componentName:'VideoInfo',
     name: "视频",
-  },
-  {
-    componentName:'JapaneseWordIndex',
-    name: "日语单词",
   },
   {
     componentName:'WordCopy',

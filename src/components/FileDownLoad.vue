@@ -148,7 +148,7 @@ const onClickFileConfirm = async () => {
   if (form.value.selected === 'download') {
     const container = document.querySelector("html")
     const htmlAnchorElement = document.createElement("a");
-    htmlAnchorElement.href = encodeURI(`/file/getFileByAbsolutePath?path=${currentPath}`)
+    htmlAnchorElement.href = (`/file/getFileByAbsolutePath?path=${encodeURIComponent(currentPath)}`)
     htmlAnchorElement.download = currentPath.split("/").at(-1) as string
     container!.appendChild(htmlAnchorElement)
     htmlAnchorElement.click()
