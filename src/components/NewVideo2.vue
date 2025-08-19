@@ -66,12 +66,19 @@ const SEPARATOR = "-_-"
 const overlayImageUrl = ref("")
 const overlay = ref<HTMLElement>()
 const placeholder = ref("")
-function initArtPlayer(videoUrl: string) {
-
-  instance.value = new Artplayer({
+async function initArtPlayer(videoUrl: string) {
+    const res = await axios.get(`/file/getFileByAbsolutePath?path=${encodeURIComponent("D:/BackUpDictionary/BilibiliBackup/video-info.json")}`);
+    const json = res.data
+    const artplayer_settings = {
+      times:{
+        [videoUrl]:json[videoUrl]
+      }
+    }
+    localStorage.setItem("artplayer_settings",JSON.stringify(artplayer_settings))
+    instance.value = new Artplayer({
     container: artRef.value,
     url: videoUrl,
-    volume: 0.5,
+    volume: 0,
     isLive: false,
     autoSize: false,
     title: 'Name',
@@ -172,6 +179,19 @@ function initArtPlayer(videoUrl: string) {
   instance.value.on("video:ended", () => {
   })
   instance.value.on('ready', async () => {
+    setInterval(()=>{
+      axios.get(`/file/getFileByAbsolutePath?path=${encodeURIComponent("D:/BackUpDictionary/BilibiliBackup/video-info.json")}`)
+          .then(res=>{
+            const json = res.data
+            json[videoUrl] = instance.value!.currentTime
+            window.postForm({
+              dest:"D:/BackUpDictionary/BilibiliBackup",
+              filename:"video-info.json",
+              blob:JSON.stringify(json)
+            })
+          });
+
+    },2000)
   })
   instance.value.on('restart', () => {
   });
@@ -213,7 +233,6 @@ onMounted(async () => {
       })
   console.log(videoDirectoryName.value, videoName.value)
   initArtPlayer("/"+path)
-  console.log();
   const pre = document.querySelector(".video-container .pre")
   const next = document.querySelector(".video-container .next")
   const html = document.documentElement

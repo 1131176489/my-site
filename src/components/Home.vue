@@ -24,6 +24,10 @@ const items = [
     componentName:'WordCopy',
     name: "用户名密码",
   },
+  {
+    componentName:'FileViewer',
+    name: "FileViewer",
+  },
 ]
 </script>
 <style lang="scss" scoped>
