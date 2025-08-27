@@ -6,7 +6,7 @@
     <span>
       按文件类型
     </span>
-    <span>
+    <span @click="">
       修改时间
     </span>
   </div>
@@ -86,19 +86,26 @@ const onHashchange = async () => {
   console.log("测试", route.query)
   const path = route.query.path
   if (path) {
-    let res = await axios.get("/file/getDirectoryListByAbsolutePath", {
-      params: {
-        path: path
-      }
+    let res = await axios.post("/file/getDirectoryListByAbsolutePath", {
+        path
     })
     renderData.value = res.data
-    renderData.value = renderData.value.sort((s1, s2) => {
-      if (s1.isFile === s2.isFile) {
-        return 0
-      } else {
-        return s1.isFile ? 1 : -1
+    const filesArray :DirectoryListItem[]= []
+    const directoryArray:DirectoryListItem[]=  []
+    renderData.value.forEach((value, index, array)=>{
+      if (value.isFile){
+        filesArray.push(value)
+      }else {
+        directoryArray.push(value)
       }
     })
+    filesArray.sort((s1,s2)=>{
+      return s2.lastModified - s1.lastModified
+    })
+    directoryArray.sort((s1,s2)=>{
+      return s2.lastModified - s1.lastModified
+    })
+    renderData.value = [...filesArray,...directoryArray]
   } else {
     renderData.value = initData
   }
@@ -135,6 +142,7 @@ const onClickFileConfirm = async () => {
     const container = document.querySelector("html")
     const htmlAnchorElement = document.createElement("a");
     htmlAnchorElement.href = (`/file/getFileByAbsolutePath?path=${encodeURIComponent(currentPath)}`)
+    console.log(htmlAnchorElement.href)
     htmlAnchorElement.download = currentPath.split("/").at(-1) as string
     container!.appendChild(htmlAnchorElement)
     htmlAnchorElement.click()

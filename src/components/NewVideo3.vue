@@ -15,7 +15,7 @@ const  initArtPlayer = (videoUrl: string)=> {
   instance.value = new Artplayer({
     container: artRef.value,
     url: videoUrl,
-    volume: 0.5,
+    volume: parseFloat(localStorage.getItem("volume") as string),
     isLive: false,
     autoSize: false,
     title: 'Name',
@@ -75,7 +75,9 @@ const  initArtPlayer = (videoUrl: string)=> {
   })
   instance.value.on('restart', () => {
   });
-
+  instance.value.on("video:volumechange",()=>{
+    localStorage.setItem("volume",instance.value?.volume)
+  })
 }
 onMounted(async () => {
   const path = location.href.split("=")[1]

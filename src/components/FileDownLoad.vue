@@ -106,12 +106,11 @@ const onClickDirectory = async (path: string) => {
       renderData.value = initData
       return
     } else {
-      res = await axios.get("/file/getDirectoryListByAbsolutePath", {params: {path: tempPath}})
+      res = await axios.post("/file/getDirectoryListByAbsolutePath", {path: tempPath})
     }
   } else {
     currentStack.push(path)
-    res = await axios.get("/file/getDirectoryListByAbsolutePath", {params: {path: path}})
-
+    res = await axios.post("/file/getDirectoryListByAbsolutePath", {path})
   }
   renderData.value = res.data
   renderData.value = renderData.value.sort((s1, s2) => {

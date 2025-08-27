@@ -14,10 +14,8 @@ const onClick = (item:DirectoryListItem)=>{
   })
 }
 onMounted(() => {
-  axios.get("/file/getDirectoryListByAbsolutePath", {
-    params: {
+  axios.post("/file/getDirectoryListByAbsolutePath", {
       path: "D:\\BackUpDictionary\\日语单词图片"
-    }
   }).then(res => {
     list.value = res.data
   })
