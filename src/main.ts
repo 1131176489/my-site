@@ -34,7 +34,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 axios.interceptors.request.use((config) => {
         // 在发送请求之前做些什么
-        console.log('请求拦截器 - 请求配置:', config);
+        // console.log('请求拦截器 - 请求配置:', config);
 
         // 添加认证 Token
         const token = localStorage.getItem('token');

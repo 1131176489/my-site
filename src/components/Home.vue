@@ -28,6 +28,10 @@ const items = [
     componentName:'FileViewer',
     name: "FileViewer",
   },
+  {
+      componentName:'FilesTransmit',
+      name: "FilesTransmit",
+  },
 ]
 </script>
 <style lang="scss" scoped>

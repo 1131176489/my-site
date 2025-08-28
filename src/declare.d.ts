@@ -30,8 +30,14 @@ type Item = {
     commentObj: { [key: string]: string },
     isArchive:boolean,
 }
+type FilesTransmitItem = {
+    time:string,
+    user:string,
+    content:string,
+}
 export {
     MyResponse,
     DirectoryListItem,
     Item,
+    FilesTransmitItem,
 }

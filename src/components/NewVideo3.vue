@@ -76,7 +76,7 @@ const  initArtPlayer = (videoUrl: string)=> {
   instance.value.on('restart', () => {
   });
   instance.value.on("video:volumechange",()=>{
-    localStorage.setItem("volume",instance.value?.volume)
+    localStorage.setItem("volume",instance.value!.volume + "")
   })
 }
 onMounted(async () => {
