@@ -2,6 +2,7 @@ import {createRouter, createWebHashHistory, RouteRecordRaw} from "vue-router"
 import Home from "../components/Home.vue"
 import NotFound from "../components/NotFound.vue"
 import FileDownLoad from "../components/FileDownLoad.vue"
+import FileUpload from "../components/FileUpload.vue"
 import VideoInfo from "../components/VideoInfo.vue";
 import AnnualFeeCalculation from "../components/AnnualFeeCalculation.vue";
 import WordCopy from "../components/WordCopy.vue";
@@ -13,6 +14,7 @@ import FilesTransmit from "../components/FilesTransmit.vue";
 const routes: Readonly<RouteRecordRaw[]> = [
     {path: "/", component: Home, name: "Home"},
     {path: "/FileDownLoad", component: FileDownLoad, name: "FileDownLoad"},
+    {path: "/FileUpload", component: FileUpload, name: "FileUpload"},
     {path: "/VideoInfo", component: VideoInfo, name: "VideoInfo"},
     {path: "/yearFee", component: AnnualFeeCalculation, name: "AnnualFeeCalculation"},
     {path: "/WordCopy", component: WordCopy, name: "WordCopy"},

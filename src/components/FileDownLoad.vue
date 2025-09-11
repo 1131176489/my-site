@@ -1,202 +1,81 @@
 <template>
-  <div class="container">
-    <div v-for="item in renderData" class="item" @click="onClickDiv(item.isFile,item.path)">
-      <div v-if="item.isFile" class="file content" @click="onClickFile(item.path)">
-        <span>{{ item.filename }}</span>
-        <img :src="`/file/getThumbnail?path=${encodeURIComponent(item.path)}`" alt="">
-      </div>
-      <div class="content directory" v-else @click="onClickDirectory(<string>item.path)">
+  <div class="SpecialFileDownload">
+    <el-button type="primary" @click="onClick">
+      点击下载
+    </el-button>
+    <div class="file-list-parent">
+      <div v-for="(item,index) in fileList" class="filename-list">
         {{ item.filename }}
+        <el-icon :class="[`success-icon-${index}`]" color="rgb(149, 212, 117)"><CircleCheckFilled /></el-icon>
+        <el-icon :class="[`fail-icon-${index}`]" color="rgb(196, 86, 86)"><CircleCloseFilled/></el-icon>
       </div>
     </div>
   </div>
-  <el-dialog class="dialog" v-model="dialogFormVisible" title="选择一个选项" width="300">
-    <el-form :model="form">
-      <el-form-item label="选项" :label-width="formLabelWidth">
-        <el-select v-model="form.selected" placeholder="请选择">
-          <el-option label="打开视频" value="openVideo"/>
-          <el-option label="下载" value="download"/>
-        </el-select>
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">取消</el-button>
-        <el-button type="primary" @click="onClickFileConfirm">
-          确定
-        </el-button>
-      </div>
-    </template>
-  </el-dialog>
 </template>
 <script setup lang="ts">
-import axios from 'axios';
-import {ref} from 'vue';
+import {ElMessage} from "element-plus";
+import {downloadFile, getDirectoryListByAbsolutePath, getFileByAbsolutePath, mySleep} from "../assets/utils"
 import {DirectoryListItem} from "../declare";
-import {ElOption, ElSelect} from "element-plus";
+import {onMounted, ref} from "vue";
+const fileList = ref<Array<DirectoryListItem>>()
+const onClick = async () => {
+  ElMessage.warning({message: "开始下载"})
+  for (let index = 0; index < fileList.value.length; index++) {
+    console.log(fileList.value[index])
 
-const dialogTableVisible = ref(false)
-const dialogFormVisible = ref(false)
-const formLabelWidth = '80px'
+    try {
+      const res = await getFileByAbsolutePath(fileList.value[index].path)
+      const blob = res.data
+      downloadFile(blob,fileList.value[index].filename)
+      const element = document.querySelector(`.success-icon-${index}`) as HTMLDivElement;
+      element.style.display = "inline-flex"
+    } catch (e) {
+      ElMessage.success(e.message)
+      const element = document.querySelector(`.fail-icon-${index}`) as HTMLDivElement;
+      element.style.display = "inline-flex"
+    }
+    await mySleep(1)
+  }
+  ElMessage.success("下载完成")
+}
+onMounted(async () => {
+  const res = await getDirectoryListByAbsolutePath("D:/static/中转站")
 
-const form = ref({
-  selected: '',
+  fileList.value = res.data as Array<DirectoryListItem>
 })
-let currentPath = ""
-// const testData: DirectoryListItem[] = (() => {
-//   const temp: DirectoryListItem[] = []
-//   for (let i = 0; i < 100; i++) {
-//     let filename;
-//     let isFile;
-//     let lastModified;
-//     if (i % 2 === 0) {
-//       filename = `这是文件_${i}.txt`
-//       isFile = true
-//       lastModified = Date.now() + i
-//     } else {
-//       filename = `这是目录_${i}`
-//       isFile = false
-//       lastModified = Date.now() + i
-//     }
-//     const item: DirectoryListItem = {
-//       filename,
-//       isFile,
-//       lastModified,
-//     }
-//     temp.push(item)
-//   }
-//
-//   return temp
-// })()
-const initData = [
-  {
-    isFile: false,
-    filename: "C盘",
-    lastModified: 0,
-    path: "c:/"
-  },
-  {
-    isFile: false,
-    filename: "D盘",
-    lastModified: 0,
-    path: "d:/"
-  },
-  {
-    isFile: false,
-    filename: "E盘",
-    lastModified: 0,
-    path: "e:/"
-  },
-  {
-    isFile: false,
-    filename: "G盘",
-    lastModified: 0,
-    path: "g:/"
-  },
-]
-let currentStack: string[] = []
-let renderData = ref<DirectoryListItem[]>(initData)
-const value = ref('')
-const onClickDirectory = async (path: string) => {
-  let res;
-  if (path === "") {
-    currentStack.pop()
-    const tempPath = currentStack.at(-1)
-    if (tempPath === undefined) {
-      renderData.value = initData
-      return
-    } else {
-      res = await axios.post("/file/getDirectoryListByAbsolutePath", {path: tempPath})
-    }
-  } else {
-    currentStack.push(path)
-    res = await axios.post("/file/getDirectoryListByAbsolutePath", {path})
-  }
-  renderData.value = res.data
-  renderData.value = renderData.value.sort((s1, s2) => {
-    if (s1.isFile === s2.isFile) {
-      return 0
-    } else {
-      return s1.isFile ? 1 : -1
-    }
-  })
-  renderData.value.unshift({
-    isFile: false,
-    filename: "...",
-    lastModified: 0,
-    path: ""
-  })
-}
-const onClickFile = async (path: string | undefined) => {
-  dialogFormVisible.value = true
-  currentPath = path as string
-  console.log(currentPath)
-}
-
-const onClickDiv = async (isFile: boolean, path: string|undefined) => {
-  if (isFile) {
-    onClickFile(path)
-  } else {
-    // @ts-ignore
-    onClickDirectory(path)
-  }
-}
-const onClickFileConfirm = async () => {
-  dialogFormVisible.value = false
-  console.log(form.value)
-  if (form.value.selected === 'download') {
-    const container = document.querySelector("html")
-    const htmlAnchorElement = document.createElement("a");
-    htmlAnchorElement.href = (`/file/getFileByAbsolutePath?path=${encodeURIComponent(currentPath)}`)
-    htmlAnchorElement.download = currentPath.split("/").at(-1) as string
-    container!.appendChild(htmlAnchorElement)
-    htmlAnchorElement.click()
-  } else if (form.value.selected === 'openVideo') {
-    location.assign(`/#/NewVideo2?path=${currentPath}`)
-  }
-}
 </script>
 <style lang="scss" scoped>
-.container {
-  padding: 20px;
-  display: grid;
-  //grid-template-columns: 1fr 1fr 1fr;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
 
-  .item {
-    height: 200px;
-    border: 1px solid black;
+.SpecialFileDownload {
+  height: 100%;
+  overflow: auto;
 
-    .content {
-      position: relative;
-
-      span {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        cursor: pointer;
-        word-break: break-all;
-        overflow: hidden;
-        text-overflow: ellipsis; /* 显示省略号 */
-      }
-
-      img {
-        max-height: 100%; /* 图片最大宽度不超过容器 */
-        max-width: 100%; /* 图片最大宽度不超过容器 */
-
-        height: auto; /* 高度自动调整，保持宽高比 */
-        width: auto; /* 高度自动调整，保持宽高比 */
-        display: block; /* 避免图片下方的空白间隙 */
-      }
+  .filename-list{
+    border: 1px solid gainsboro;
+    margin: 10px 0 10px 0;
+    padding: 10px;
+    font-size: 20px;
+    background-color: #fff;
+    .el-icon{
+      vertical-align: bottom;
+      display: none;
     }
   }
+  .file-list-parent{
+    /* 关键CSS：绝对定位 */
+    background-color: #f0f0f0;
+    position: absolute;
+    top: 50px; /* top值 = 第一个div高度(60px) + 第二个div高度(40px) */
+    left: 0;
+    right: 0; /* 左右拉满宽度 */
+    bottom: 0; /* 底部贴紧父容器底部 */
+    /* 出现滚动条的关键 */
+    overflow-y: auto; /* 垂直方向溢出时出现滚动条 */
+  }
 
-}
-
-.el-calendar-day {
-  height: 65px !important;
+  .el-button {
+    display: block;
+    margin: 0 auto;
+  }
 }
 </style>

@@ -85,6 +85,7 @@ let renderData = ref<DirectoryListItem[]>(initData)
 const onHashchange = async () => {
   console.log("测试", route.query)
   const path = route.query.path
+  console.log(path)
   if (path) {
     let res = await axios.post("/file/getDirectoryListByAbsolutePath", {
         path
@@ -119,7 +120,7 @@ onUnmounted(() => {
   window.removeEventListener('hashchange', onHashchange);
 });
 const onClickDirectory = async (path: string) => {
-  location.href = "/#/FileViewer?path=" + path
+  location.href = "/#/FileViewer?path=" + encodeURIComponent(path)
 }
 const onClickFile = async (path: string | undefined) => {
   dialogFormVisible.value = true

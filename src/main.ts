@@ -26,9 +26,18 @@ app.use(pinia)
 // else {
 //         axios.defaults.baseURL = "/"
 // }
-//单位为秒
+//单位为毫秒
+var linkElement = document.createElement("link");
+linkElement.rel = "shortcut icon"
+linkElement.type = "image/x-icon"
+if (location.href.includes("192.168.0.108")) {
+    linkElement.href = "./src/assets/vue.svg"
+} else {
+    linkElement.href = "./src/assets/vue.svg"
+}
+document.documentElement.querySelector("head").append(linkElement)
 
-axios.defaults.timeout = 60000
+axios.defaults.timeout = 600000
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }
@@ -49,26 +58,29 @@ axios.interceptors.request.use((config) => {
         console.error('请求拦截器 - 请求错误:', error);
         return Promise.reject(error);
     })
-// router.beforeEach(async (to, from) => {
-//         let isAuthenticated = localStorage.getItem("token")
-//         if (!isAuthenticated) {
-//                 if (to.name !== "Login") {
-//                         return { name: "Login" }
-//                 }
-//         }
-//         // else {
-//         //         axios.get("video/getInfo", {
-//         //                 headers: {
-//         //                         'Authorization': "Bearer " + localStorage.getItem("token"),
-//         //                 },
-//         //         }).then(() => {
-//         //         }).catch(() => {
-//         //                 localStorage.removeItem("token")
-//         //                 router.push({
-//         //                         name: "Login"
-//         //                 })
-//         //         })
-//         //         axios.defaults.headers.Authorization = "Bearer " + isAuthenticated
-//         // }
-// })
+router.beforeEach(async (to, from) => {
+    let isAuthenticated = localStorage.getItem("token")
+    if (isAuthenticated) {
+
+    }else {
+        // if (to.name !== "Verification") {
+        //     return {name: "Verification"}
+        // }
+        // console.log(isAuthenticated)
+    }
+    // else {
+    //         axios.get("video/getInfo", {
+    //                 headers: {
+    //                         'Authorization': "Bearer " + localStorage.getItem("token"),
+    //                 },
+    //         }).then(() => {
+    //         }).catch(() => {
+    //                 localStorage.removeItem("token")
+    //                 router.push({
+    //                         name: "Login"
+    //                 })
+    //         })
+    //         axios.defaults.headers.Authorization = "Bearer " + isAuthenticated
+    // }
+})
 app.mount("#app")  

@@ -17,20 +17,25 @@
           {{ item.time }}
         </div>
         <div class="button">
-          <button @click="onClickCopy(index)">复制</button>
-          <button @click="onClickDeleteOne(index)">删除</button>
+          <el-button type="primary" @click="onClickCopy(index)">复制</el-button>
+          <el-button type="danger" @click="onClickDeleteOne(index)">删除</el-button>
         </div>
 
         <div :class="[multiSelect?'':'none','multi-select',multiSelectDeleteData.includes(index)?'green':'']">
           o
         </div>
       </div>
-
     </div>
     <textarea class="chat-box" v-model="text"></textarea>
-    <button @click="onClickSend">
-      发送
-    </button>
+<!--    <div ref="inputDiv" class="textarea-autosize" contenteditable="true" rol e="textbox" aria-multiline="true" placeholder="请输入内容..."></div>-->
+    <div>
+      <el-button @click="onClickSend">
+        发送
+      </el-button>
+      <el-button @click="onClickClear">
+        清空
+      </el-button>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -39,9 +44,19 @@ import axios from "axios";
 import {FilesTransmitItem} from "../declare";
 import moment from "moment";
 import {ElMessage} from "element-plus";
-
-const roomDiv = ref<Element>()
+let clipboard = navigator.clipboard || {
+  writeText: (text) => {
+    let copyInput = document.createElement('input');
+    copyInput.value = text;
+    document.body.appendChild(copyInput);
+    copyInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(copyInput);
+  }
+}
 const text = ref("")
+const roomDiv = ref<Element>()
+const inputDiv = ref<HTMLDivElement>()
 const multiSelect = ref(false)
 const multiSelectDeleteData = ref<number[]>([])
 let renderData = ref<FilesTransmitItem[]>([])
@@ -70,6 +85,9 @@ const onClickSend = async () => {
   // const el = document.querySelector(".room")
   // el!.scrollTop = el!.scrollHeight
   roomDiv.value!.scrollTop = roomDiv.value!.scrollHeight
+}
+const onClickClear = ()=>{
+  text.value = ""
 }
 const getData = async () => {
   const res = await axios.get("/file/getFileByAbsolutePath", {
@@ -134,11 +152,9 @@ const onClickAll = () => {
 
 }
 const onClickCopy = async (index: number) => {
-  await navigator.clipboard.writeText(renderData.value[index].content)
-  ElMessage({
-    message: '复制成功',
-    type: 'success',
-  })
+
+  clipboard.writeText(renderData.value[index].content)
+  ElMessage.success("复制成功")
 }
 const onClickDeleteOne = async (index_: number) => {
   renderData.value = renderData.value.filter((value, index, array) => {
@@ -153,81 +169,142 @@ onMounted(async () => {
 })
 </script>
 <style lang="scss">
-.transmit {
-  font-size: 24px;
-  border: solid 2px rgb(128, 128, 128);
-  display: flex;
-  flex-direction: column;
-  width: 1000px;
-  height: 100%;
-  margin: 0 auto;
-
-  .multi-select-button {
-    position: fixed;
-    top: 50px;
-    left: 50px;
+@media screen and (min-width: 766px){
+  .transmit {
+    font-size: 24px;
+    border: solid 2px rgb(128, 128, 128);
     display: flex;
     flex-direction: column;
+    width: 1000px;
+    height: 100%;
+    margin: 0 auto;
 
-    button {
-      margin-bottom: 20px;
-      cursor: pointer;
-    }
-  }
-
-  .room {
-    display: flex;
-    flex-direction: column;
-    overflow: auto;
-    height: 70%;
-    flex-grow: 1;
-
-    .renderItem {
-      margin: 10px 0;
-      border: 1px solid #aaa;
-      padding: 5px;
-      width: 50%;
-      height: fit-content;
-      word-break: break-all;
-
-      .time {
-        margin-top: 20px;
-        font-size: 16px;
-        color: #a8abb2;
-      }
-
-      .button {
-        margin-top: 10px;
-      }
-
+    .multi-select-button {
+      position: fixed;
+      top: 50px;
+      left: 50px;
+      display: flex;
+      flex-direction: column;
       button {
-        font-size: 16px;
-        margin-right: 10px;
+        margin-bottom: 20px;
         cursor: pointer;
-
-      }
-
-      .multi-select {
-        color: #a8abb2;
-        font-size: 28px;
       }
     }
 
-    .pc {
-      transform: translateX(100%);
+    .room {
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      height: 70%;
+      flex-grow: 1;
+      .renderItem {
+        margin: 10px 0;
+        border: 1px solid #aaa;
+        padding: 5px;
+        width: 100%;
+        height: fit-content;
+        word-break: break-all;
+
+        .time {
+          margin-top: 20px;
+          font-size: 16px;
+          color: #a8abb2;
+        }
+
+        .button {
+          margin-top: 10px;
+        }
+
+        button {
+          font-size: 16px;
+          margin-right: 10px;
+          cursor: pointer;
+
+        }
+
+        .multi-select {
+          color: #a8abb2;
+          font-size: 28px;
+        }
+      }
+    }
+
+    .chat-box {
+      padding: 5px;
+      border: 1px solid #aaa;
+      height: 30%;
+      flex-shrink: 0;
+      flex-grow: 1;
+      width: 100%;
+
+      overflow: auto;
+      resize: none;
     }
   }
-
-  .chat-box {
-    padding: 5px;
-    border: 1px solid #aaa;
-    height: 30%;
-    flex-shrink: 0;
-    flex-grow: 1;
+}
+@media screen and (min-width: 1px) and (max-width: 765px){
+  .transmit {
+    font-size: 24px;
+    border: solid 2px rgb(128, 128, 128);
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    height: 100%;
+    margin: 0 auto;
 
-    overflow: auto;
-    resize: none;
+    .multi-select-button {
+      display: none;
+    }
+
+    .room {
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      height: 70%;
+      flex-grow: 1;
+      .renderItem {
+        margin: 10px 0;
+        border: 1px solid #aaa;
+        padding: 5px;
+        width: 100%;
+        height: fit-content;
+        word-break: break-all;
+
+        .time {
+          margin-top: 20px;
+          font-size: 16px;
+          color: #a8abb2;
+        }
+
+        .button {
+          margin-top: 10px;
+        }
+
+        button {
+          font-size: 16px;
+          margin-right: 10px;
+          cursor: pointer;
+
+        }
+
+        .multi-select {
+          color: #a8abb2;
+          font-size: 28px;
+        }
+      }
+    }
+
+    .chat-box {
+      padding: 5px;
+      border: 1px solid #aaa;
+      height: 30%;
+      flex-shrink: 0;
+      flex-grow: 1;
+      width: 100%;
+
+      overflow: auto;
+      resize: none;
+    }
   }
 }
 

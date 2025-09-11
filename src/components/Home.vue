@@ -14,7 +14,11 @@ import {RouterLink} from "vue-router";
 const items = [
   {
     componentName:'FileDownLoad',
-    name: "文件下载",
+    name: "特定目录文件下载",
+  },
+  {
+    componentName:'FileUpload',
+    name: "文件上传",
   },
   {
     componentName:'VideoInfo',
@@ -41,9 +45,11 @@ const items = [
 .container {
   padding: 5px;
   display: flex;
-
-  justify-content: start;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   a{
+    margin: 10px 0;
     width: fit-content;
     padding-right: 5px;
   }
