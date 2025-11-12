@@ -18,6 +18,7 @@
         </div>
         <div class="button">
           <el-button type="primary" @click="onClickCopy(index)">复制</el-button>
+          <el-button type="primary" @click="onClickEdit(index)">编辑内容</el-button>
           <el-button type="danger" @click="onClickDeleteOne(index)">删除</el-button>
         </div>
 
@@ -34,6 +35,9 @@
       </el-button>
       <el-button @click="onClickClear">
         清空
+      </el-button>
+      <el-button @click="onClickConfirmEdit">
+        确认编辑内容
       </el-button>
     </div>
   </div>
@@ -59,7 +63,9 @@ const roomDiv = ref<Element>()
 const inputDiv = ref<HTMLDivElement>()
 const multiSelect = ref(false)
 const multiSelectDeleteData = ref<number[]>([])
+let editIndex = -1
 let renderData = ref<FilesTransmitItem[]>([])
+const URL = "http://192.168.0.108/file/upload"
 const onClickSend = async () => {
   if (text.value === "") {
     return
@@ -75,11 +81,8 @@ const onClickSend = async () => {
     time: moment(Date.now()).format(("YYYY年MM月DD日HH时mm分SS秒")),
     content: text.value
   })
-  await window.postForm({
-    dest: "D:/BackUpDictionary/FilesTransmit/",
-    filename: "record.json",
-    blob: JSON.stringify(data)
-  })
+
+  await sendData(JSON.stringify(data))
   await getData()
   text.value = ""
   // const el = document.querySelector(".room")
@@ -97,11 +100,12 @@ const getData = async () => {
   })
   renderData.value = res.data
 }
-const sendData = async () => {
-  await window.postForm({
+const sendData = async (data) => {
+
+  await axios.postForm(URL,{
     dest: "D:/BackUpDictionary/FilesTransmit/",
     filename: "record.json",
-    blob: JSON.stringify(renderData.value)
+    file: new File([data],"1")
   })
 }
 const onClickMultiSelect = async () => {
@@ -131,11 +135,7 @@ const onClickMultiDelete = async () => {
   })
   multiSelectDeleteData.value = []
   multiSelect.value = !multiSelect.value
-  await window.postForm({
-    dest: "D:/BackUpDictionary/FilesTransmit/",
-    filename: "record.json",
-    blob: JSON.stringify(renderData.value)
-  })
+  await sendData(JSON.stringify(renderData.value))
   await getData()
 }
 const onClickAll = () => {
@@ -160,7 +160,18 @@ const onClickDeleteOne = async (index_: number) => {
   renderData.value = renderData.value.filter((value, index, array) => {
     return index != index_
   })
-  await sendData()
+  await sendData(JSON.stringify(renderData.value))
+}
+const onClickEdit = async (index_: number) => {
+  text.value = renderData.value[index_].content
+  editIndex = index_
+}
+const onClickConfirmEdit = async () => {
+  renderData.value.at(editIndex).content = text.value
+  text.value = ""
+  editIndex = -1
+  await sendData(JSON.stringify(renderData.value))
+  ElMessage({message:"修改成功",type:"success"})
 }
 onMounted(async () => {
   await getData()
@@ -169,7 +180,7 @@ onMounted(async () => {
 })
 </script>
 <style lang="scss">
-@media screen and (min-width: 766px){
+@media screen and (min-width: 1366px){
   .transmit {
     font-size: 24px;
     border: solid 2px rgb(128, 128, 128);
@@ -242,7 +253,7 @@ onMounted(async () => {
     }
   }
 }
-@media screen and (min-width: 1px) and (max-width: 765px){
+@media screen and (min-width: 1px) and (max-width: 1366px){
   .transmit {
     font-size: 24px;
     border: solid 2px rgb(128, 128, 128);

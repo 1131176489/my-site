@@ -1,16 +1,18 @@
 <template>
   <div class="FileUpload">
-    <input
-        @change="onChange"
-        multiple
-        type="file"
-        id="fileInput"/>
-    <el-button type="danger" @click="uploadFile">
-      上传文件
-    </el-button>
+    <div>
+      <input
+          @change="onChange"
+          multiple
+          type="file"
+          id="fileInput"/>
+      <el-button type="danger" @click="uploadFile">
+        上传文件
+      </el-button>
+    </div>
     <div class="file-list-parent">
       <div v-for="(item,index) in fileList" class="filename-list">
-        {{ (item as File).name }}
+        <div class="text">{{ (item as File).name }}</div>
         <el-icon :class="[`success-icon-${index}`]" color="rgb(149, 212, 117)"><CircleCheckFilled /></el-icon>
         <el-icon :class="[`fail-icon-${index}`]" color="rgb(196, 86, 86)"><CircleCloseFilled/></el-icon>
       </div>
@@ -77,8 +79,11 @@ onMounted(()=>{
 </script>
 <style lang="scss">
 .FileUpload {
-  height: 100%;
+
   overflow: auto;
+  display: flex;
+  height: 100%  ;
+  flex-direction: column;
   .filename-list{
     border: 1px solid gainsboro;
     margin: 10px 0 10px 0;
@@ -90,27 +95,27 @@ onMounted(()=>{
       display: none;
     }
   }
+
   .file-list-parent{
-    /* 关键CSS：绝对定位 */
+    flex: 1 1 0;
     background-color: #f0f0f0;
-    position: absolute;
-    top: 50px; /* top值 = 第一个div高度(60px) + 第二个div高度(40px) */
-    left: 0;
-    right: 0; /* 左右拉满宽度 */
-    bottom: 0; /* 底部贴紧父容器底部 */
-    /* 出现滚动条的关键 */
-    overflow-y: auto; /* 垂直方向溢出时出现滚动条 */
+    overflow-y: auto;
+    .text{
+      width: 100%;
+      word-break: break-all;
+    }
   }
 }
 
-@media screen and (min-width:777px){
+@media screen and (min-width:1366px){
   .FileUpload {
     width: 50%;
-    transform: translateX(50%);
+    //transform: translateX(50%);
   }
 }
 @media screen and (min-width:0px){
   .FileUpload {
+    width: 100%;
     input{
       width: 270px;
     }
