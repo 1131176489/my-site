@@ -1,13 +1,11 @@
 <template>
   <div class="SpecialFileDownload">
-    <el-button type="primary" @click="onClick">
-      点击下载
-    </el-button>
     <div class="file-list-parent">
       <div v-for="(item,index) in fileList" class="filename-list">
         {{ item.filename }}
-        <el-icon :class="[`success-icon-${index}`]" color="rgb(149, 212, 117)"><CircleCheckFilled /></el-icon>
-        <el-icon :class="[`fail-icon-${index}`]" color="rgb(196, 86, 86)"><CircleCloseFilled/></el-icon>
+        <el-button type="primary" @click="onClickDownload(index)">
+          点击下载
+        </el-button>
       </div>
     </div>
   </div>
@@ -18,25 +16,18 @@ import {downloadFile, getDirectoryListByAbsolutePath, getFileByAbsolutePath, myS
 import {DirectoryListItem} from "../declare";
 import {onMounted, ref} from "vue";
 const fileList = ref<Array<DirectoryListItem>>()
-const onClick = async () => {
+const onClickDownload = async (index: number) => {
   ElMessage.warning({message: "开始下载"})
-  for (let index = 0; index < fileList.value.length; index++) {
-    console.log(fileList.value[index])
+  console.log(fileList.value[index])
 
-    try {
-      const res = await getFileByAbsolutePath(fileList.value[index].path)
-      const blob = res.data
-      downloadFile(blob,fileList.value[index].filename)
-      const element = document.querySelector(`.success-icon-${index}`) as HTMLDivElement;
-      element.style.display = "inline-flex"
-    } catch (e) {
-      ElMessage.success(e.message)
-      const element = document.querySelector(`.fail-icon-${index}`) as HTMLDivElement;
-      element.style.display = "inline-flex"
-    }
-    await mySleep(1)
+  try {
+    const res = await getFileByAbsolutePath((fileList.value[index].path))
+    const blob = res.data
+    downloadFile(blob,fileList.value[index].filename)
+    ElMessage.success("下载完成")
+  } catch (e) {
+    ElMessage.error(e.message)
   }
-  ElMessage.success("下载完成")
 }
 onMounted(async () => {
   const res = await getDirectoryListByAbsolutePath("D:/static/中转站")

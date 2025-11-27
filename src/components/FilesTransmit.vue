@@ -11,7 +11,9 @@
            @click="onClickMultiSelectItem(index)"
       >
         <div class="text">
-          {{ item.content }}
+<!--          {{ item.content }}-->
+          <div v-html="formatLinks(item.content)"></div>
+
         </div>
         <div class="time">
           {{ item.time }}
@@ -66,6 +68,10 @@ const multiSelectDeleteData = ref<number[]>([])
 let editIndex = -1
 let renderData = ref<FilesTransmitItem[]>([])
 const URL = "http://192.168.0.108/file/upload"
+const formatLinks = (text:string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  return text.replace(urlRegex, '<a href="$1" target="_blank">$1</a>')
+}
 const onClickSend = async () => {
   if (text.value === "") {
     return

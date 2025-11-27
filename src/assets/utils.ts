@@ -1,10 +1,8 @@
 import axios from "axios";
 
 const getFileByAbsolutePath = async (path: string) => {
-    return await axios.get("/file/getFileByAbsolutePath", {
-        params: {
-            path
-        },
+    return await axios.get(`/file/getFileByAbsolutePath?path=${encodeURIComponent(path)}`, {
+
         responseType:"blob"
     })
 }

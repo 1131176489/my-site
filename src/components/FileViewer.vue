@@ -1,22 +1,23 @@
 <template>
-  <div class="container">
-    <span>
+  <div class>
+    <el-button type="primary" @click="onClickSortByName">
       按名字
-    </span>
-    <span>
+    </el-button>
+    <el-button type="primary">
       按文件类型
-    </span>
-    <span @click="">
+    </el-button>
+    <el-button type="primary">
       修改时间
-    </span>
+    </el-button>
   </div>
   <div class="container">
     <div v-for="item in renderData" class="item" @click="onClickDiv(item.isFile,item.path)">
       <div v-if="item.isFile" class="file content" @click="onClickFile(item.path)">
-        <span>{{ item.filename }}</span>
         <img :src="`/file/getThumbnail?path=${encodeURIComponent(item.path)}`" alt="">
       </div>
       <div class="content directory" v-else @click="onClickDirectory(<string>item.path)">
+      </div>
+      <div>
         {{ item.filename }}
       </div>
     </div>
@@ -88,25 +89,25 @@ const onHashchange = async () => {
   console.log(path)
   if (path) {
     let res = await axios.post("/file/getDirectoryListByAbsolutePath", {
-        path
+      path
     })
     renderData.value = res.data
-    const filesArray :DirectoryListItem[]= []
-    const directoryArray:DirectoryListItem[]=  []
-    renderData.value.forEach((value, index, array)=>{
-      if (value.isFile){
+    const filesArray: DirectoryListItem[] = []
+    const directoryArray: DirectoryListItem[] = []
+    renderData.value.forEach((value, index, array) => {
+      if (value.isFile) {
         filesArray.push(value)
-      }else {
+      } else {
         directoryArray.push(value)
       }
     })
-    filesArray.sort((s1,s2)=>{
+    filesArray.sort((s1, s2) => {
       return s2.lastModified - s1.lastModified
     })
-    directoryArray.sort((s1,s2)=>{
+    directoryArray.sort((s1, s2) => {
       return s2.lastModified - s1.lastModified
     })
-    renderData.value = [...filesArray,...directoryArray]
+    renderData.value = [...filesArray, ...directoryArray]
   } else {
     renderData.value = initData
   }
@@ -152,6 +153,16 @@ const onClickFileConfirm = async () => {
   }
 }
 
+const onClickSortByName = () => {
+  renderData.value = renderData.value.sort((item1, item2) => {
+    if (item1.isFile === item2.isFile) {
+      return item1.filename.localeCompare(item2.filename)
+    } else {
+      return item1.isFile ? 1 : 0
+    }
+  })
+}
+
 </script>
 <style lang="scss" scoped>
 .container {
@@ -177,9 +188,9 @@ const onClickFileConfirm = async () => {
       //justify-content: center;
       //align-items: center;
       span {
-        position: absolute;
-        top: 0;
-        left: 0;
+        //position: absolute;
+        //top: 0;
+        //left: 0;
         width: 100%;
         height: 100%;
         cursor: pointer;
@@ -191,7 +202,7 @@ const onClickFileConfirm = async () => {
       img {
         max-height: 100%; /* 图片最大宽度不超过容器 */
         max-width: 100%; /* 图片最大宽度不超过容器 */
-
+        border-bottom: 2px solid black;
         height: auto; /* 高度自动调整，保持宽高比 */
         width: auto; /* 高度自动调整，保持宽高比 */
         display: block; /* 避免图片下方的空白间隙 */

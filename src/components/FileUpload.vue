@@ -54,7 +54,7 @@ const uploadFile = async () => {
     const file = fileInput!.files[i]
     try {
       await axios.postForm("/file/upload", {
-        dest: "D:/BackUpDictionary/FilesTransmit/Files",
+        dest: "D:/static/中转站",
         filename: file.name,
         file
       })
