@@ -81,7 +81,6 @@ async function initArtPlayer(videoUrl: string) {
     volume: 0,
     isLive: false,
     autoSize: false,
-    title: 'Name',
     hotkey: true,
     fullscreen: true,
     fullscreenWeb: true,

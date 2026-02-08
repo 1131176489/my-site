@@ -73,7 +73,6 @@ function initArtPlayer(videoUrl: string) {
                 volume: 0.5,
                 isLive: false,
                 autoSize: false,
-                title: 'Name',
                 hotkey: true,
                 fullscreen: true,
                 fullscreenWeb: true,
@@ -122,7 +121,6 @@ function initArtPlayer(videoUrl: string) {
                                 },
                         },
                 ],
-                whitelist: [],
                 layers: [],
                 controls: [
                         {

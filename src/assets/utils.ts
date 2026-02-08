@@ -1,10 +1,25 @@
 import axios from "axios";
-
+export const filePathToUrlPath = (path:string)=>{
+    let temp = path.split("/")
+    const diskIdentifier = temp.shift().toLowerCase().replaceAll(":","")
+    temp = temp.map(value => encodeURIComponent(value))
+    temp.unshift("/"+diskIdentifier)
+    return temp.join("/")
+}
+const postForm = ({dest, filename, blob}:{dest:string,filename:string,blob:Blob}) => {
+    if (!dest){
+        dest = "D:/BackUpDictionary/浏览器下载"
+    }
+    const file = new File([blob],"1")
+    return axios.postForm("/file/upload", {
+        dest,
+        filename,
+        file,
+    });
+}
 const getFileByAbsolutePath = async (path: string) => {
-    return await axios.get(`/file/getFileByAbsolutePath?path=${encodeURIComponent(path)}`, {
 
-        responseType:"blob"
-    })
+    return await axios.get(filePathToUrlPath(path))
 }
 const getDirectoryListByAbsolutePath = async (path: string) => {
     return await axios.post("/file/getDirectoryListByAbsolutePath", {
@@ -35,4 +50,5 @@ export {
     getDirectoryListByAbsolutePath,
     downloadFile,
     mySleep,
+    postForm,
 }

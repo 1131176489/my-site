@@ -21,7 +21,7 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 main: resolve(__dirname, 'index.html'),
-                // video: resolve(__dirname, 'video/video.html'),
+                video: resolve(__dirname, 'video/index.html'),
             },
         },
     },
@@ -29,7 +29,7 @@ export default defineConfig({
     server: {
         host: true,
         proxy: {
-            '/BilibiliVideo': {
+            '/d': {
                 target: "http://localhost",
                 changeOrigin: true,
             },

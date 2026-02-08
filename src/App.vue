@@ -2,7 +2,9 @@
 <template>
         <div id="App">
           <div id="return">
-            <router-link to="/" id="return-link">返回主页</router-link>
+            <router-link to="/" id="return-link" style="text-align: center;display: flex;justify-content: center; align-items: center;"
+            >返回主页
+            </router-link>
           </div>
           <div id="router-view">
             <router-view >
@@ -30,7 +32,7 @@
   #return{
     #return-link{
       height: 50px;
-      background-color: #eeeeee;
+      background-color: #abcabc;
     }
   }
   #router-view{

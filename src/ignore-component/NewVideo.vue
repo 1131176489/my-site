@@ -89,7 +89,7 @@ function initArtPlayer(videoUrl: string, email: string, time: number) {
     volume: 0.5,
     isLive: false,
     autoSize: false,
-    title: 'Name',
+
     hotkey: true,
     fullscreen: true,
     fullscreenWeb: true,
@@ -138,7 +138,6 @@ function initArtPlayer(videoUrl: string, email: string, time: number) {
         },
       },
     ],
-    whitelist: [],
     layers: [
       {
         name: 'potser',

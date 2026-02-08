@@ -1,12 +1,23 @@
 <template>
-  <div class="container">
+  <div style="
+  height: 100%;
+  width: 100%;
+  display: grid;
+  grid-row-gap: 10px;
+  grid-column-gap: 10px;
+  place-content: center center;
+  grid-template-rows: repeat(auto-fill,100px);
+  grid-template-columns: repeat(auto-fit,100px);
+  ">
     <RouterLink
+        style="display:flex;justify-content: center;align-items: center;background-color: #ddd"
         :to="{name:item.componentName}"
         target="_blank"
         v-for="item in items">
       {{ item.name }}
     </RouterLink>
   </div>
+  <a href="/video/index.html">新视频</a>
 </template>
 <script setup lang="ts">
 import {RouterLink} from "vue-router";

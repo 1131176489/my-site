@@ -1,6 +1,8 @@
 <template>
   <div class="SpecialFileDownload">
+
     <div class="file-list-parent">
+
       <div v-for="(item,index) in fileList" class="filename-list">
         {{ item.filename }}
         <el-button type="primary" @click="onClickDownload(index)">
