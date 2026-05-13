@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 export const filePathToUrlPath = (path:string)=>{
     let temp = path.split("/")
     const diskIdentifier = temp.shift().toLowerCase().replaceAll(":","")
@@ -17,9 +17,13 @@ const postForm = ({dest, filename, blob}:{dest:string,filename:string,blob:Blob}
         file,
     });
 }
-const getFileByAbsolutePath = async (path: string) => {
+const getFileByAbsolutePath = async (path: string,config?:AxiosRequestConfig) => {
+    if (config){
+        return await axios.get(filePathToUrlPath(path),config)
+    }else {
+        return await axios.get(filePathToUrlPath(path))
+    }
 
-    return await axios.get(filePathToUrlPath(path))
 }
 const getDirectoryListByAbsolutePath = async (path: string) => {
     return await axios.post("/file/getDirectoryListByAbsolutePath", {

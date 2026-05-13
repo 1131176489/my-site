@@ -25,7 +25,8 @@ Artplayer.CONTROL_HIDE_TIME = 2000;
 let configJson = {
   loop: "singleLoop",
   volume: 0.1,
-  lastPlay: {}
+  lastPlay: {},
+  playbackRate: 1
 }
 let reg = 0
 const mapObj = {
@@ -81,7 +82,6 @@ const initArtPlayer = async (playVideoPath: string, playVideoUrl: string) => {
     url: playVideoUrl,
     isLive: false,
     autoSize: false,
-    title: 'Name',
     hotkey: true,
     fullscreen: true,
     fullscreenWeb: true,
@@ -97,6 +97,42 @@ const initArtPlayer = async (playVideoPath: string, playVideoUrl: string) => {
     fastForward: true,
     autoPlayback: true,
     controls: [
+      {
+        position: 'right', // 控件位置
+        html: configJson.playbackRate + "x", // 自定义 HTML
+        style: {
+          // position: 'absolute', // 使用绝对定位
+          // right: '120px', //
+          color: '#fff',
+          padding: '5px 10px',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          borderRadius: '5px',
+        },
+        selector: [
+          {
+            html: "2x",
+          },
+          {
+            html: "1.75x",
+          },
+          {
+            html: "1.5x",
+          },
+          {
+            html: "1.25x",
+          },
+          {
+            html: "1x",
+          },
+        ],
+        onSelect: (selector, element, event) => {
+          const rate = selector.html.replaceAll("x","")
+          instance.value.playbackRate = rate
+          configJson.playbackRate = rate
+          saveConfigJson()
+          return selector.html
+        }
+      },
       {
         position: 'right',
         html: mapObj[configJson.loop],
@@ -127,9 +163,10 @@ const initArtPlayer = async (playVideoPath: string, playVideoUrl: string) => {
           return item.html;
         }
       },
+
       {
         position: 'right', // 控件位置
-        html: "旋转", // 自定义 HTML
+        html: "<div id='my-full-screen'>全屏</div>", // 自定义 HTML
         style: {
           // position: 'absolute', // 使用绝对定位
           // right: '120px', //
@@ -139,9 +176,15 @@ const initArtPlayer = async (playVideoPath: string, playVideoUrl: string) => {
           borderRadius: '5px',
         },
         click: () => {
-          reg = reg + 90
-          instance.value.video.style.transform = `rotate(${reg}deg)`
-
+          const videoElement = document.querySelector("#video-player") as HTMLDivElement;
+          const listElement = document.querySelector("#list") as HTMLDivElement;
+          if (videoElement.style.height === "100%") {
+            videoElement.style.height = ""
+            listElement.style.display = "block"
+          } else {
+            videoElement.style.height = "100%"
+            listElement.style.display = "none"
+          }
         }
       }
     ]
@@ -158,6 +201,7 @@ const initArtPlayer = async (playVideoPath: string, playVideoUrl: string) => {
   })
   instance.value.on('ready', async () => {
     instance.value.volume = configJson.volume
+    instance.value.playbackRate = configJson.playbackRate
   })
   instance.value.on('restart', () => {
   });
@@ -216,7 +260,8 @@ onMounted(() => {
   (async () => {
     dirPath = new URL(location.href).search.replaceAll("?path=", "")
     // 获取目录数据文件列表
-    const res = await getDirectoryListByAbsolutePath(dirPath)
+    console.log()
+    const res = await getDirectoryListByAbsolutePath(decodeURIComponent(dirPath))
     data.value = res.data.map((value, index, array) => {
       return {
         ...value,
@@ -241,6 +286,7 @@ onMounted(() => {
       await nextTick();
       document.querySelector(".heightLight").scrollIntoView(true)
     } else {
+      console.log(data.value)
       playVideoPath = data.value[0].path
       playVideoUrl = getVideoUrl(playVideoPath)
 
@@ -248,6 +294,9 @@ onMounted(() => {
       configJson.lastPlay[dirPath] = data.value[0].path
       saveConfigJson()
     }
+    document.querySelector("title").textContent = data.value.find((value, index, obj)=>{
+      return value.isCurrentPlay
+    }).filename
     await initArtPlayer(playVideoPath, playVideoUrl)
     // instance.value.switchUrl(playVideoUrl)
     // instance.value.destroy()
@@ -285,7 +334,7 @@ setInterval(() => {
     <div id="list">
       <div :class="['list-item',item.isCurrentPlay?'heightLight':'']" :title="item.filename"
            v-for="(item, index) in data"
-            @click="handleOnClickTitle(item,index)">
+           @click="handleOnClickTitle(item,index)">
         {{ item.filename }}
       </div>
     </div>
@@ -293,40 +342,43 @@ setInterval(() => {
 
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 
 @media screen  and (min-width: 1400px) {
   .container {
 
     flex-direction: row;
+
     #video-player {
       height: 100%;
       flex: 1 0 auto;
     }
-    #list{
+
+    #list {
       flex: 0 0 auto;
       /*border: 1px solid black;*/
       height: 100%;
       width: 350px;
       padding: 5px;
       overflow-y: auto;
-      .list-item{
+
+      .list-item {
         width: 100%;
         margin-left: 0;
         margin-bottom: 5px;
-        height: 60px;
+        //height: 60px;
+        min-height: 60px;
         word-break: normal;
-        border: 1px solid lightskyblue;
-        white-space: nowrap;
+        border: 5px solid lightskyblue;
+        padding: 10px;
+        white-space: normal;
         overflow: hidden;
-        text-overflow: ellipsis;
         /*padding: 5px;*/
         cursor: pointer;
         font-size: 16px;
         transition: all 0.1s;
-        line-height: 60px;
         user-select: none;
-        padding-left: 5px;
+        line-height: 30px;
       }
     }
   }
@@ -335,34 +387,39 @@ setInterval(() => {
 @media screen  and (max-width: 1400px) {
   .container {
     flex-direction: column;
+
     #video-player {
       width: 100%;
       flex: 1 0 auto;
       aspect-ratio: 16 / 9;
     }
-    #list{
+
+    #list {
       flex: 0 1 auto;
       /*border: 1px solid black;*/
       width: 100%;
       padding: 5px;
       overflow-y: scroll;
-      .list-item{
+
+      .list-item {
         width: 100%;
         margin-left: 0;
         margin-bottom: 5px;
-        height: 60px;
+        padding: 10px;
+        //height: 60px;
+        min-height: 60px;
         word-break: normal;
-        border: 1px solid lightskyblue;
-        white-space: nowrap;
+        border: 5px solid lightskyblue;
+        white-space: normal;
         overflow: hidden;
         text-overflow: ellipsis;
         /*padding: 5px;*/
         cursor: pointer;
         font-size: 16px;
         transition: all 0.1s;
-        line-height: 60px;
+
         user-select: none;
-        padding-left: 5px;
+        line-height: 30px;
       }
     }
   }

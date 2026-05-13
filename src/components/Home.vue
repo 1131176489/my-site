@@ -24,10 +24,6 @@ import {RouterLink} from "vue-router";
 
 const items = [
   {
-    componentName:'FileDownLoad',
-    name: "特定目录文件下载",
-  },
-  {
     componentName:'FileUpload',
     name: "文件上传",
   },
